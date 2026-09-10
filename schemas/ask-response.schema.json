@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specflow-design-assistant.local/schemas/ask-response.schema.json",
+  "title": "AskResponse（问答响应）",
+  "type": "object",
+  "required": [
+    "ok",
+    "apiVersion",
+    "data"
+  ],
+  "properties": {
+    "ok": {
+      "type": "boolean"
+    },
+    "apiVersion": {
+      "const": "v1"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "mode",
+        "citations"
+      ],
+      "properties": {
+        "ok": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "llm",
+            "retrieval",
+            "empty",
+            "llm-error"
+          ],
+          "description": "llm=模型生成；retrieval=未配 LLM 时的检索结果"
+        },
+        "answer": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        },
+        "scenario": {
+          "type": "string",
+          "enum": [
+            "design",
+            "research",
+            "general"
+          ]
+        },
+        "question": {
+          "type": "string"
+        },
+        "conversationId": {
+          "type": "string",
+          "description": "会话 id（用于回溯/联动）"
+        },
+        "usage": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object"
+            }
+          ]
+        },
+        "retrieval": {
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "bm25",
+                "hybrid"
+              ]
+            },
+            "embeddingModel": {
+              "type": "string"
+            },
+            "vectors": {
+              "type": "integer"
+            },
+            "fused": {
+              "type": "boolean"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "$ref": "citation.schema.json"
+          }
+        }
+      }
+    }
+  }
+}

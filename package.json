@@ -1,0 +1,68 @@
+{
+  "name": "specflow-engineering-studio",
+  "version": "0.2.0",
+  "private": true,
+  "description": "工程文档智能工作台：工程助手 + MinerU 文档数据库 + 原文定位与高亮",
+  "type": "commonjs",
+  "main": "index.js",
+  "bin": {
+    "kb-platform": "cli.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "desktop": "electron desktop/main.cjs",
+    "build:desktop": "electron-builder --win nsis portable",
+    "serve": "node cli.js serve",
+    "test": "node --test",
+    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "studio.specflow.engineering",
+    "productName": "SpecFlow Engineering Studio",
+    "artifactName": "SpecFlow-Engineering-Studio-v${version}-${arch}.${ext}",
+    "asar": true,
+    "electronDist": "node_modules/electron/dist",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "src/**/*",
+      "lib/**/*",
+      "schemas/**/*",
+      "ui.html",
+      "server.js",
+      "cli.js",
+      "index.js",
+      "package.json"
+    ],
+    "extraMetadata": {
+      "main": "desktop/main.cjs"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "artifactName": "SpecFlow-Engineering-Studio-v${version}-Setup.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SpecFlow Engineering Studio"
+    },
+    "portable": {
+      "artifactName": "SpecFlow-Engineering-Studio-v${version}-Portable.${ext}"
+    }
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

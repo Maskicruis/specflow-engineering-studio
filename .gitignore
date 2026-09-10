@@ -1,0 +1,11 @@
+node_modules/
+.build/
+sea.blob
+*.exe
+data/
+资料库/
+_*.js
+_*.ps1
+*.log
+release/
+*-preview.png

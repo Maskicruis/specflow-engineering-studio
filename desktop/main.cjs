@@ -3,10 +3,39 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron');
 const fs = require('node:fs');
 const path = require('node:path');
+const { UpdateManager } = require('./update-manager.cjs');
+const updateConfig = require('../build/update-config.json');
+const packageMetadata = require('../package.json');
 
 let backend = null;
 let mainWindow = null;
 let runtimeInfo = null;
+let updater = null;
+let desktopPreferences = { autoCheckUpdates: true };
+
+function preferencesPath() {
+  return path.join(app.getPath('userData'), 'desktop-preferences.json');
+}
+
+function loadDesktopPreferences() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(preferencesPath(), 'utf8'));
+    desktopPreferences = { ...desktopPreferences, autoCheckUpdates: saved.autoCheckUpdates !== false };
+  } catch {
+    desktopPreferences = { autoCheckUpdates: true };
+  }
+  return { ...desktopPreferences };
+}
+
+function saveDesktopPreferences(patch) {
+  desktopPreferences = { ...desktopPreferences, ...patch };
+  const target = preferencesPath();
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  const temporary = `${target}.tmp`;
+  fs.writeFileSync(temporary, `${JSON.stringify(desktopPreferences, null, 2)}\n`, 'utf8');
+  fs.renameSync(temporary, target);
+  return { ...desktopPreferences };
+}
 
 function listen(server, port, host) {
   return new Promise((resolve, reject) => {
@@ -68,7 +97,7 @@ function registerIpc() {
   });
   ipcMain.on('window:close', () => mainWindow?.close());
   ipcMain.handle('window:is-maximized', () => Boolean(mainWindow?.isMaximized()));
-  ipcMain.handle('desktop:info', () => ({ ...runtimeInfo, version: app.getVersion() }));
+  ipcMain.handle('desktop:info', () => ({ ...runtimeInfo, version: packageMetadata.version }));
   ipcMain.handle('dialog:choose-directory', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       title: '选择知识库目录',
@@ -85,11 +114,26 @@ function registerIpc() {
     return result.canceled ? '' : result.filePaths[0];
   });
   ipcMain.handle('desktop:open-data', () => shell.openPath(runtimeInfo.dataDir));
+  ipcMain.handle('updates:status', () => updater.getStatus());
+  ipcMain.handle('updates:check', () => updater.check());
+  ipcMain.handle('updates:download', () => updater.download());
+  ipcMain.handle('updates:install', () => {
+    const result = updater.install();
+    if (result.launched) setTimeout(() => app.quit(), 900);
+    return result;
+  });
+  ipcMain.handle('updates:preferences', () => ({ ...desktopPreferences }));
+  ipcMain.handle('updates:set-auto-check', (_event, enabled) => saveDesktopPreferences({ autoCheckUpdates: Boolean(enabled) }));
+  ipcMain.handle('updates:open-release', () => {
+    const url = updater.getStatus().releaseUrl;
+    return url ? shell.openExternal(url) : false;
+  });
 }
 
 function createMainWindow(url) {
   const capturePath = process.env.SPECFLOW_CAPTURE_PATH;
   const capturePage = process.env.SPECFLOW_CAPTURE_PAGE;
+  const captureSettings = process.env.SPECFLOW_CAPTURE_SETTINGS === '1';
   mainWindow = new BrowserWindow({
     width: 1460,
     height: 920,
@@ -100,6 +144,7 @@ function createMainWindow(url) {
     autoHideMenuBar: true,
     backgroundColor: '#0d0f12',
     title: 'SpecFlow Engineering Studio',
+    icon: path.join(__dirname, '..', 'build', 'app.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -120,6 +165,10 @@ function createMainWindow(url) {
             await mainWindow.webContents.executeJavaScript(`showPage(${JSON.stringify(capturePage)})`);
             await new Promise(resolve => setTimeout(resolve, 180));
           }
+          if (captureSettings) {
+            await mainWindow.webContents.executeJavaScript("(()=>{const panel=document.getElementById('settingsSection');panel.style.animation='none';panel.open=true;document.body.classList.add('settings-open');panel.scrollTop=panel.scrollHeight})()");
+            await new Promise(resolve => setTimeout(resolve, 260));
+          }
           const image = await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.resolve(capturePath), image.toPNG());
         } finally {
@@ -136,6 +185,9 @@ function createMainWindow(url) {
     return { action: 'deny' };
   });
   mainWindow.loadURL(url);
+  if (desktopPreferences.autoCheckUpdates && app.isPackaged && !capturePath) {
+    setTimeout(() => updater.check(), 6000);
+  }
 }
 
 const lock = app.requestSingleInstanceLock();
@@ -149,6 +201,13 @@ else {
   app.whenReady().then(async () => {
     app.setAppUserModelId('studio.specflow.engineering');
     Menu.setApplicationMenu(null);
+    loadDesktopPreferences();
+    updater = new UpdateManager({
+      currentVersion: packageMetadata.version,
+      repository: updateConfig.repository,
+      updateDir: path.join(app.getPath('userData'), 'updates')
+    });
+    updater.on('status', status => send('updates:status', status));
     registerIpc();
     const runtime = await startBackend();
     createMainWindow(runtime.url);

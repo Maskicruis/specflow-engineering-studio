@@ -24,6 +24,8 @@ test('desktop bridge exposes only bounded window and picker operations', () => {
   assert.match(preload, /contextBridge\.exposeInMainWorld\('specflowDesktop'/);
   assert.match(preload, /chooseDirectory/);
   assert.match(preload, /toggleMaximize/);
+  assert.match(preload, /updates:\s*\{/);
+  assert.match(preload, /setAutoCheck/);
   assert.doesNotMatch(preload, /require:\s*require/);
 });
 
@@ -34,4 +36,15 @@ test('desktop layout has titlebar, runtime status and settings drawer', () => {
   assert.match(ui, /data-act="winClose"/);
   assert.equal(pkg.build.extraMetadata.main, 'desktop/main.cjs');
   assert.equal(pkg.build.productName, 'SpecFlow Engineering Studio');
+  assert.equal(pkg.build.win.icon, 'build/app.ico');
+  assert.equal(pkg.build.nsis.runAfterFinish, true);
+});
+
+test('desktop shell provides verified GitHub Release updates', () => {
+  assert.match(main, /new UpdateManager/);
+  assert.match(main, /updates:download/);
+  assert.match(main, /desktop-preferences\.json/);
+  assert.match(ui, /id="updateState"/);
+  assert.match(ui, /安装并重启/);
+  assert.match(ui, /SHA-256/);
 });

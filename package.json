@@ -1,6 +1,6 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "工程文档智能工作台：工程助手 + MinerU 文档数据库 + 原文定位与高亮",
   "type": "commonjs",
@@ -12,9 +12,14 @@
     "start": "node server.js",
     "desktop": "electron desktop/main.cjs",
     "build:desktop": "electron-builder --win nsis portable",
+    "release:publish": "node scripts/publish-release.cjs",
     "serve": "node cli.js serve",
     "test": "node --test",
-    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs"
+    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/update-manager.cjs"
+  },
+  "author": "Maskicruis",
+  "dependencies": {
+    "https-proxy-agent": "7.0.6"
   },
   "devDependencies": {
     "electron": "44.3.0",
@@ -27,10 +32,13 @@
     "asar": true,
     "electronDist": "node_modules/electron/dist",
     "directories": {
+      "buildResources": "build",
       "output": "release"
     },
     "files": [
       "desktop/**/*",
+      "build/update-config.json",
+      "build/app.ico",
       "src/**/*",
       "lib/**/*",
       "schemas/**/*",
@@ -44,21 +52,28 @@
       "main": "desktop/main.cjs"
     },
     "win": {
+      "icon": "build/app.ico",
       "target": [
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
       ]
     },
     "nsis": {
-      "artifactName": "SpecFlow-Engineering-Studio-v${version}-Setup.${ext}",
+      "artifactName": "SpecFlow-Engineering-Studio-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
+      "perMachine": false,
       "allowToChangeInstallationDirectory": true,
+      "allowElevation": true,
+      "packElevateHelper": true,
+      "runAfterFinish": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "SpecFlow Engineering Studio"
+      "shortcutName": "SpecFlow Engineering Studio",
+      "installerIcon": "build/app.ico",
+      "uninstallerIcon": "build/app.ico"
     },
     "portable": {
-      "artifactName": "SpecFlow-Engineering-Studio-v${version}-Portable.${ext}"
+      "artifactName": "SpecFlow-Engineering-Studio-Portable-${version}-${arch}.${ext}"
     }
   },
   "engines": {

@@ -17,6 +17,16 @@ contextBridge.exposeInMainWorld('specflowDesktop', {
     chooseDirectory: () => ipcRenderer.invoke('dialog:choose-directory'),
     chooseMineru: () => ipcRenderer.invoke('dialog:choose-mineru')
   },
+  updates: {
+    status: () => ipcRenderer.invoke('updates:status'),
+    check: () => ipcRenderer.invoke('updates:check'),
+    download: () => ipcRenderer.invoke('updates:download'),
+    install: () => ipcRenderer.invoke('updates:install'),
+    preferences: () => ipcRenderer.invoke('updates:preferences'),
+    setAutoCheck: enabled => ipcRenderer.invoke('updates:set-auto-check', Boolean(enabled)),
+    openRelease: () => ipcRenderer.invoke('updates:open-release'),
+    onStatus: callback => subscribe('updates:status', callback)
+  },
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     toggleMaximize: () => ipcRenderer.send('window:toggle-maximize'),
@@ -25,4 +35,3 @@ contextBridge.exposeInMainWorld('specflowDesktop', {
     onMaximized: callback => subscribe('window:maximized', callback)
   }
 });
-

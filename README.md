@@ -1,117 +1,87 @@
-# SpecFlow Engineering Studio v0.2
+# SpecFlow Engineering Studio
 
-独立的工程文档智能工作台，面向机械、电力及其他工程设计中的规范参数查证、设计依据核对和技术资料管理：
-**导入 PDF → MinerU 精准解析为 Markdown/结构化内容 → 本地检索 → LLM 基于库内内容回答 → 引用可一键跳回原文并高亮核查**。
+面向工程规范与技术资料的本地桌面工作台。它把 **MinerU 文档解析、工程资料数据库、知识问答、原文定位与高亮核查** 放在同一个 Windows 客户端中，同时保留标准 HTTP API，便于后续接入 Agent 或知识库平台。
 
-本工程版与原知识库版本使用不同的产品名、应用标识、默认数据目录和发行文件，不会覆盖原安装或原 GitHub Release。
+[![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
+[![Tests](https://img.shields.io/badge/tests-37%20passed-38b27a)](#开发与验证)
 
-## 组成
+> 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
-| 层 | 模块 | 说明 |
-| --- | --- | --- |
-| 解析层 | `src/mineru-adapter.js` + `pipeline.js` + `transform.js` | 调 MinerU 解析 PDF，产出 `document.json`（schema v1.0，含页码与**页内坐标**）、`view.json`、Markdown、图片 |
-| 文档服务 | `src/service.js` + `http-server.js` | 导入/排队/进度/阅读/原 PDF/图片/修正 等 API（v1 与兼容接口） |
-| 检索层 | `src/rag.js` | 对全库 `document.json` 建 **BM25** 索引（中文按字/二元词切分），命中天然携带 文档-页-块-坐标 |
-| 问答层 | `src/qa.js` + `src/scenarios.js` | 检索 → 组装带编号上下文 → LLM 生成；未配置 LLM 时降级为检索结果 + 引用 |
-| LLM 层 | `src/llm.js` | OpenAI 兼容 `/chat/completions`：DeepSeek、vLLM、Ollama（`http://127.0.0.1:11434/v1`）等 |
-| 桌面外壳 | `desktop/main.cjs` + `desktop/preload.cjs` | Electron 原生窗口、窗口控制、目录选择和本地服务生命周期管理 |
-| 界面 | `ui.html`（内嵌 PDF.js） | 独立“工程助手”页 + 新增“文档数据库”页 + 阅读视图；点引用 → 跳原 PDF 该页并**高亮该内容** |
+![工程助手](docs/assets/engineering-assistant-v0.3.png)
 
-## 界面设计
+## 主要能力
 
-- 采用工程软件式固定标题栏、工作区侧栏和右侧设置抽屉；
-- 工程助手与文档数据库是两个独立页面，不使用宣传型首页；
-- 问答输入框固定在任务区底部，支持 `Enter` 发送、`Shift + Enter` 换行；
-- 支持拖放导入、明暗主题和窄屏响应式布局；
-- 解析状态、文档进度、回答与引用采用一致的状态层级，保留原有 PDF 定位、高亮和表格修正能力。
+- **工程助手**：针对规范条文、设计参数和技术要求提问；回答保留引用，不脱离资料库猜测。
+- **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模。
+- **MinerU 精准解析**：按真实阅读顺序输出 Markdown/结构化内容，保留表格、图片、页码和页内坐标。
+- **原文核查**：点击回答引用，直接跳回 PDF 对应页并高亮命中区域。
+- **混合检索**：默认本地 BM25；配置向量模型后自动使用 BM25 + 向量 RRF 融合。
+- **标准接口**：提供版本化 API、能力发现、Schema、SSE 流式问答和结构化条目导出。
+- **客户端更新**：在“设置 → 软件更新”检查、下载并安装 GitHub Release；安装包必须通过 SHA-256 校验。
 
-## 安装与使用（Windows）
+![文档数据库](docs/assets/document-database-v0.3.png)
 
-构建产物位于 `release/`：
+![软件更新设置](docs/assets/software-update-v0.3.png)
 
-- `SpecFlow-Engineering-Studio-v0.2.0-Setup.exe`：安装版，可选择安装目录，并创建桌面与开始菜单快捷方式；
-- `SpecFlow-Engineering-Studio-v0.2.0-Portable.exe`：免安装版，双击即可运行。
+## 下载与安装
 
-这是独立桌面软件，不需要手动打开浏览器。首次启动后：
+进入 [最新 Release](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)：
 
-1. 点击右上角「设置」，选择资料库目录并检测 MinerU；
-2. 在「导入文档」中选择或拖入 PDF；
-3. 解析完成后，在「知识问答」中查证内容，点击引用可回到 PDF 原文并高亮；
-4. 如需生成式回答，在设置中填写 OpenAI 兼容的模型接口；不填写时仍可使用本地检索。
+- 推荐：`SpecFlow-Engineering-Studio-Setup-<版本>-x64.exe`，可选择安装位置，会创建桌面和开始菜单快捷方式；
+- 免安装：`SpecFlow-Engineering-Studio-Portable-<版本>-x64.exe`，直接运行；
+- 完整性校验：`SHA256SUMS.txt`。
 
-配置和索引默认保存在当前 Windows 用户的应用数据目录，升级软件不会覆盖资料库。
+重要：**SpecFlow 安装程序不内置 MinerU 模型和运行环境。** 首次使用请在右上角“设置”中选择已经安装的 `mineru.exe`，点击“检测”。软件安装与 MinerU 安装是两个独立步骤。详见 [安装说明](docs/INSTALL_CN.md)。
 
-## 从源码运行
+## 使用流程
 
-```bash
-npm install
-npm run desktop
-```
+1. 打开“设置”，选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
+2. 在“文档数据库”页拖入或选择工程 PDF，点击“上传并解析”。
+3. 解析完成后，在“工程助手”中提问；点击引用卡片核查原文和高亮坐标。
+4. 如需生成式回答，配置任意 OpenAI 兼容接口；不配置时仍可使用纯本地检索。
+5. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，资料库不会被删除。
 
-仅在作为可调度服务或接入 Agent 时，才需要启动无界面的标准接口：
+## 独立运行与 Agent 接入
+
+桌面应用自行启动本地服务，无需浏览器。作为可调度工具时可只启动标准服务：
 
 ```powershell
 node .\cli.js serve --host 127.0.0.1 --port 8890 --no-open
 ```
 
-- 首次使用：在界面的「连接与解析设置」中配置 **资料库路径**、**MinerU 路径**、**解析参数**、**服务端口**与 **LLM 接口**；端口修改在重启程序后生效；
-- 导入 PDF → 等待解析（有进度与实时日志）→ 在「💬 知识库问答」里提问；
-- 回答中的引用卡片点击 → 打开该文档对应页并高亮命中块（表格/图同样可高亮）。
-
-## 配置 LLM（二选一）
-
-1. **云端（示例 DeepSeek）**：baseUrl 填 `https://api.deepseek.com/v1`，model 填 `deepseek-chat`，填入 API Key；
-2. **本地（Ollama）**：baseUrl 填 `http://127.0.0.1:11434/v1`，model 填 `qwen2.5:14b`（示例），Key 留空。
-
-桌面版配置写入 Windows 用户应用数据目录下的 `data/settings.json`；源码服务模式写入项目的 `data/settings.json`。未配置模型时平台仍可用（检索模式：给出原文片段与引用）。
-
-## API（节选）
+常用接口：
 
 ```text
-GET  /api/v1/health                 # 服务/索引/LLM 状态
-GET  /api/v1/search?q=消防车道&topK=8
-POST /api/v1/ask                    # {question, scenario: design|research|general, docIds?, topK?}
-GET  /api/v1/scenarios              # 场景模板
-PATCH /api/v1/settings              # {library, mineru, parser, llm}
-GET  /api/v1/documents/:id/content  # canonical document.json
-GET  /api/v1/documents/:id/source   # 原 PDF（支持 Range）
+GET   /api/v1/health
+GET   /api/v1/capabilities
+GET   /api/v1/search?q=消防车道&topK=8
+POST  /api/v1/ask
+POST  /api/v1/ask/stream
+GET   /api/v1/documents/:id/content
+GET   /api/v1/documents/:id/source
+POST  /api/v1/export/items
+PATCH /api/v1/settings
 ```
 
-## 说明
+响应采用统一成功/错误封装；引用包含文档 ID、页码、条文号和 `bbox`，适合被 Agent 消费并回溯证据。
 
-- 解析在本地完成（MinerU），PDF 与解析产物都在本机 `资料库/`，**不入仓库**；
-- 检索为纯本地 BM25（无需向量库即可用）；后续可加向量/重排提升召回；
-- LLM 仅接收**命中的片段**（非整库），可离线模型（Ollama）以保证数据不外发。
-## 已验证（v0.2）
+## 数据与隐私
 
-- `npm test`：**31/31 通过**，覆盖桌面外壳、解析转换/顺序/坐标、BM25 检索（命中带页与 bbox）、未配 LLM 的降级检索、**配置 LLM 后的生成式回答与引用保留**、场景模板、界面接线（提问/引用跳转/LLM 配置）；
-- 真实 HTTP 端到端：把 `llm` 临时指向本地 OpenAI 兼容桩 → `POST /api/v1/ask` 返回 `mode=llm` 且 8 条引用（含 `p40 · 条文 2`、`p39 · 条文 8.3.2`，带 bbox）；
-- 真实库验证：3 本规范、**2272 个内容块**入索引，检索/引用跳转可用（页面右侧 PDF 跳页并高亮命中块）。
+- PDF、解析结果、索引、会话与设置默认保存在当前 Windows 用户的应用数据目录或用户指定的数据库目录；
+- 更新和覆盖安装不会主动删除资料库；
+- LLM 只接收检索命中的片段。若使用本地兼容模型，可保持资料不外发；
+- API Key 不写入仓库，也不会进入 Release 产物。
 
-### 想复现“生成式回答”
+## 开发与验证
 
-```bash
-# 1) 启动本地桩（或换成你的真实 LLM）
-node -e "const{createStubLlm}=require('./test/stub-llm-server');createStubLlm().listen(8799).then(p=>console.log('stub',p))"
-# 2) 在界面 LLM 接口填：http://127.0.0.1:8799/v1 + 模型名 stub-model（Key 留空）
-# 3) 提问即可看到 mode=llm 的回答（引用仍可点开核查）
+```powershell
+npm install
+npm test
+npm run desktop
+npm run build:desktop
 ```
-## v0.2 工程版
 
-- **混合检索**：配置 `llm.embeddingModel` 后自动升级为 **BM25 + 向量（RRF 融合）**，向量缓存于 `data/embeddings/`；未配置则纯 BM25；
-- **流式问答**：`POST /api/v1/ask/stream`（SSE：`citations` → `delta*` → `done` → `saved`）；
-- **会话历史**：`GET /api/v1/conversations[/:id]`，回答与引用可审计；
-- **标准化输出**：`schemas/ask-response.schema.json`、`citation.schema.json`、`search-response.schema.json`、`item-export.schema.json`（可用 `GET /schemas/<file>` 拉取）；
-- **联动预留**：`GET /api/v1/capabilities`（能力发现）+ `POST /api/v1/export/items`（结构化条目卡片，含条文号与 `locate` 坐标）；
-- **桌面发行版**：`npm run build:desktop` 同时生成可选择安装目录的安装程序与单文件免安装程序；桌面窗口自行管理本地服务，无需浏览器。
+`npm run build:desktop` 会生成 Windows x64 安装版和便携版。v0.3.0 自动化验证为 **37/37 通过**，覆盖桌面外壳、更新下载与哈希校验、图标帧、解析顺序、表格、坐标、检索、LLM 问答、引用定位和标准接口。
 
-### 实测（本机）
-
-| 项 | 结果 |
-| --- | --- |
-| `npm test` | **31/31 通过** |
-| 混合检索（桩向量） | `retrieval.mode=hybrid`、`vectors=2272` |
-| 问答 | `mode=llm`、引用 8 条、返回 `conversationId` |
-| SSE 流式 | 事件 `citations/done/saved` 齐全（`delta` 需真实流式模型） |
-| 条目导出 | 918 张卡片，`locate.bbox` 可用 |
-| 桌面程序 | 原生窗口可启动，本地服务与窗口生命周期联动，安装版与免安装版均由同一源码生成 |
+更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.3.0 发布说明](docs/RELEASE_NOTES_0.3.0_CN.md)

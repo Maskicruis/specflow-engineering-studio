@@ -41,4 +41,6 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /id="parseTables"/);
   assert.match(html, /id="llmEmbed"/);
   assert.match(html, /function clearLlmKey/);
+  assert.match(html, /function renderUpdateStatus/);
+  assert.match(html, /id="autoCheckUpdates"/);
 });

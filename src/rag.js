@@ -24,6 +24,77 @@ function tokenize(text) {
 }
 function refOf(text) { const m = String(text || '').match(/^\s*(\d+(?:\.\d+){0,3})/); return m ? m[1] : ''; }
 
+const FLOW_TEXT_TYPES = new Set(['text', 'list']);
+
+function endsCompleteSentence(text) {
+  return /[。！？!?]\s*[”’"'）)】》]*\s*$/.test(String(text || ''));
+}
+
+function startsNumberedBlock(text) {
+  return /^\s*(?:\d+(?:\.\d+){1,5}|\d+[、.)）])(?=\s|[^\d.]|$)/.test(String(text || ''));
+}
+
+function joinFlowText(left, right) {
+  const a = String(left || '').trimEnd();
+  const b = String(right || '').trimStart();
+  if (!a) return b;
+  if (!b) return a;
+  // MinerU may split a Chinese word exactly at a layout-block boundary (for
+  // example “相” + “邻”). CJK fragments must be joined without an artificial
+  // space; Latin words retain one.
+  const separator = /[A-Za-z0-9]$/.test(a) && /^[A-Za-z0-9]/.test(b) ? ' ' : '';
+  return a + separator + b;
+}
+
+function unionBoxes(boxes) {
+  const valid = boxes.filter(box => Array.isArray(box) && box.length >= 4 && box.every(Number.isFinite));
+  if (!valid.length) return null;
+  return [
+    Math.min(...valid.map(box => box[0])),
+    Math.min(...valid.map(box => box[1])),
+    Math.max(...valid.map(box => box[2])),
+    Math.max(...valid.map(box => box[3]))
+  ];
+}
+
+/**
+ * Assemble layout fragments into retrieval units without mutating the
+ * canonical document. The first item remains the PDF/highlight anchor.
+ */
+function assembleFlowEntries(rows, maxChars = 1200) {
+  const output = [];
+  for (let index = 0; index < rows.length; index++) {
+    const seed = rows[index];
+    if (!FLOW_TEXT_TYPES.has(seed.type)) {
+      output.push(seed);
+      continue;
+    }
+    let text = seed.text;
+    const sourceItemIds = [seed.itemId];
+    const samePageRows = [seed];
+    let cursor = index;
+    while (!endsCompleteSentence(text) && text.length < maxChars && cursor + 1 < rows.length) {
+      const next = rows[cursor + 1];
+      if (!FLOW_TEXT_TYPES.has(next.type)) break;
+      if (Number(next.page) - Number(rows[cursor].page) > 1) break;
+      if (startsNumberedBlock(next.text)) break;
+      text = joinFlowText(text, next.text);
+      sourceItemIds.push(next.itemId);
+      if (Number(next.page) === Number(seed.page)) samePageRows.push(next);
+      cursor += 1;
+    }
+    output.push(Object.assign({}, seed, {
+      text,
+      sourceItemIds,
+      fragmentCount: sourceItemIds.length,
+      bbox: unionBoxes(samePageRows.map(row => row.bbox)),
+      bboxNormalized: unionBoxes(samePageRows.map(row => row.bboxNormalized))
+    }));
+    index = cursor;
+  }
+  return output;
+}
+
 class RagIndex {
   constructor(settings) { this.settings = settings; this.loaded = 0; this.signature = ''; this.entries = []; this.docs = []; this.df = new Map(); this.avgLen = 0; }
 
@@ -46,21 +117,27 @@ class RagIndex {
       const meta = doc.document || {};
       const docId = meta.id || path.basename(dir);
       docs.push({ id: docId, title: meta.title || path.basename(dir), dir, pageCount: (doc.pages || []).length });
+      const rows = [];
       for (const item of (doc.items || [])) {
         const text = item.text || htmlToText(item.html) || item.caption || '';
-        if (!text || text.length < 2) continue;
+        if (!text) continue;
         if (['header', 'footer', 'page_number'].includes(item.type)) continue;
-        const toks = tokenize(text);
-        if (!toks.length) continue;
-        const tf = new Map(); for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
-        for (const t of tf.keys()) df.set(t, (df.get(t) || 0) + 1);
-        entries.push({
-          docId, title: meta.title || '', page: item.page, itemId: item.id, type: item.type,
-          ref: refOf(text), text, len: toks.length, tf,
+        rows.push({
+          docId, title: meta.title || '', page: item.page, order: item.order, itemId: item.id, type: item.type,
+          ref: refOf(text), text,
           bbox: item.bbox && item.bbox.pdf ? item.bbox.pdf : null,
           bboxNormalized: item.bbox && item.bbox.normalized ? item.bbox.normalized : null,
           asset: item.asset || '', html: item.html || ''
         });
+      }
+      rows.sort((a, b) => Number(a.page) - Number(b.page) || Number(a.order || 0) - Number(b.order || 0));
+      for (const row of assembleFlowEntries(rows)) {
+        const text = row.text;
+        const toks = tokenize(text);
+        if (!toks.length) continue;
+        const tf = new Map(); for (const t of toks) tf.set(t, (tf.get(t) || 0) + 1);
+        for (const t of tf.keys()) df.set(t, (df.get(t) || 0) + 1);
+        entries.push(Object.assign({}, row, { ref: refOf(text), len: toks.length, tf }));
       }
     }
     this.entries = entries; this.docs = docs; this.df = df;
@@ -110,13 +187,13 @@ class RagIndex {
 
 function makeSnippet(text, tokens) {
   const s = String(text || '');
-  if (s.length <= 240) return s;
+  if (s.length <= 900) return s;
   const lower = s.toLowerCase();
   let at = -1;
   for (const t of tokens) { const i = lower.indexOf(t); if (i >= 0) { at = i; break; } }
-  if (at < 0) return s.slice(0, 240) + '…';
-  const start = Math.max(0, at - 80);
-  return (start > 0 ? '…' : '') + s.slice(start, start + 260) + (start + 260 < s.length ? '…' : '');
+  if (at < 0) return s.slice(0, 900) + '…';
+  const start = Math.max(0, at - 180);
+  return (start > 0 ? '…' : '') + s.slice(start, start + 900) + (start + 900 < s.length ? '…' : '');
 }
 
 /** 混合检索：BM25 + 向量（可选）RRF 融合；未配置 embedding 时等价于 BM25 */
@@ -178,4 +255,4 @@ async function searchDetailed(index, query, options = {}, deps = {}) {
   }
 }
 
-module.exports = { RagIndex, tokenize, searchDetailed };
+module.exports = { RagIndex, assembleFlowEntries, endsCompleteSentence, joinFlowText, startsNumberedBlock, tokenize, searchDetailed };

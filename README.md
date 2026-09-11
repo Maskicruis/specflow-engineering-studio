@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-46%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-48%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -91,6 +91,6 @@ npm run desktop
 npm run build:desktop
 ```
 
-`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。v0.5.0 自动化验证为 **46/46 通过**，覆盖 DSH 启动、项目登记、余额密钥隔离、桌面外壳、更新下载与哈希校验、解析顺序、表格、坐标、三种问答模式、多轮上下文、文后原文链接、引用定位和标准接口。
+`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。v0.5.1 自动化验证为 **48/48 通过**，覆盖 DSH 启动、项目登记、余额密钥隔离、桌面外壳、更新下载与哈希校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、多轮上下文、正文/文后原文链接、引用定位和标准接口。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.5.0 发布说明](docs/RELEASE_NOTES_0.5.0_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.5.1 发布说明](docs/RELEASE_NOTES_0.5.1_CN.md)

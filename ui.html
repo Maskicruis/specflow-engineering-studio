@@ -334,7 +334,7 @@ function answerHtml(text,citations){
   var list=Array.isArray(citations)?citations:[], byNumber={}; list.forEach(function(c){byNumber[String(c.n)]=c;});
   var html=esc(text||'');
   html=html.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
-  html=html.replace(/\[(\d{1,3})\]/g,function(all,n){return byNumber[n]?citationLink(byNumber[n]):all;});
+  html=html.replace(/(?:\[|【|［)\s*(?:(?:片段|segment)\s*)?(\d{1,3})\s*(?:\]|】|］)/gi,function(all,n){var key=String(Number(n));return byNumber[key]?citationLink(byNumber[key]):all;});
   html=html.split(/\n{2,}/).map(function(block){return '<p>'+block.replace(/\n/g,'<br>')+'</p>';}).join('');
   if(list.length) html+='<div class="answer-sources"><div class="answer-sources-title">参考来源 · 点击可跳转并高亮 PDF 原文</div><div class="answer-source-list">'+list.map(citationSourceLink).join('')+'</div></div>';
   return html;

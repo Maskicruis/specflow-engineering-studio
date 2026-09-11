@@ -1,6 +1,6 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "工程文档智能工作台：DeepSeek Harness Agent + MinerU 文档数据库 + RAG 原文定位与高亮",
   "type": "commonjs",

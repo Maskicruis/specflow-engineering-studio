@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const ui = fs.readFileSync(path.join(__dirname, '..', 'ui.html'), 'utf8');
 
@@ -25,4 +26,21 @@ test('界面脚本语法有效（两个 script 块）', () => {
   const blocks = [...ui.matchAll(/<script(?: type="module")?>([\s\S]*?)<\/script>/g)].map(m => m[1]);
   assert.ok(blocks.length >= 2, '至少两个脚本块');
   for (const block of blocks) { assert.ok(block.trim().length > 0, '脚本块非空'); }
+});
+
+test('正文中的片段编号变成与文后来源相同的可点击引用', () => {
+  const start = ui.indexOf('function answerHtml');
+  const end = ui.indexOf('function citationCard', start);
+  assert.ok(start >= 0 && end > start, '找到 answerHtml');
+  const sandbox = {
+    esc: value => String(value || ''),
+    citationLink: citation => '<a data-act="cite" data-doc="' + citation.docId + '">[' + citation.n + ']</a>',
+    citationSourceLink: () => '<a class="answer-source-link"></a>'
+  };
+  vm.runInNewContext(ui.slice(start, end), sandbox);
+  const citations = [{ n: 3, docId: 'doc_test' }];
+  for (const marker of ['[3]', '[片段3]', '[片段 3]', '[Segment 3]', '【片段3】']) {
+    const rendered = sandbox.answerHtml('要求' + marker, citations);
+    assert.match(rendered, /data-act="cite" data-doc="doc_test"/, marker + ' 应渲染为可点击引用');
+  }
 });

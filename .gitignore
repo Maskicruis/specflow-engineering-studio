@@ -1,4 +1,5 @@
 node_modules/
+assets/runtime/node.exe
 .build/
 sea.blob
 *.exe

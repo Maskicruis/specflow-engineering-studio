@@ -35,6 +35,10 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /<textarea id="q"/);
   assert.match(html, /data-page="database"/);
   assert.match(html, /data-workspace-page="assistant"/);
+  assert.match(html, /data-workspace-page="agent"/);
+  assert.match(html, /DeepSeek Harness Agent/);
+  assert.match(html, /function renderHarnessStatus/);
+  assert.match(html, /function refreshBalance/);
   assert.match(html, /data-workspace-page="database"/);
   assert.match(html, /id="dbSearch"/);
   assert.match(html, /class="drop-zone"/);

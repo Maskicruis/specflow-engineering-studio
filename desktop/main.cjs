@@ -4,6 +4,8 @@ const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require('electron')
 const fs = require('node:fs');
 const path = require('node:path');
 const { UpdateManager } = require('./update-manager.cjs');
+const { HarnessRuntime } = require('./harness-runtime.cjs');
+const { fetchDeepSeekBalance } = require('./deepseek-balance.cjs');
 const updateConfig = require('../build/update-config.json');
 const packageMetadata = require('../package.json');
 
@@ -11,7 +13,8 @@ let backend = null;
 let mainWindow = null;
 let runtimeInfo = null;
 let updater = null;
-let desktopPreferences = { autoCheckUpdates: true };
+let harnessRuntime = null;
+let desktopPreferences = { autoCheckUpdates: true, harnessAutoStart: true, harnessPort: 3080, harnessWorkspace: '' };
 
 function preferencesPath() {
   return path.join(app.getPath('userData'), 'desktop-preferences.json');
@@ -20,9 +23,16 @@ function preferencesPath() {
 function loadDesktopPreferences() {
   try {
     const saved = JSON.parse(fs.readFileSync(preferencesPath(), 'utf8'));
-    desktopPreferences = { ...desktopPreferences, autoCheckUpdates: saved.autoCheckUpdates !== false };
+    const port = Number(saved.harnessPort);
+    desktopPreferences = {
+      ...desktopPreferences,
+      autoCheckUpdates: saved.autoCheckUpdates !== false,
+      harnessAutoStart: saved.harnessAutoStart !== false,
+      harnessPort: Number.isInteger(port) && port >= 1024 && port <= 65535 ? port : 3080,
+      harnessWorkspace: typeof saved.harnessWorkspace === 'string' ? saved.harnessWorkspace : ''
+    };
   } catch {
-    desktopPreferences = { autoCheckUpdates: true };
+    desktopPreferences = { autoCheckUpdates: true, harnessAutoStart: true, harnessPort: 3080, harnessWorkspace: '' };
   }
   return { ...desktopPreferences };
 }
@@ -35,6 +45,18 @@ function saveDesktopPreferences(patch) {
   fs.writeFileSync(temporary, `${JSON.stringify(desktopPreferences, null, 2)}\n`, 'utf8');
   fs.renameSync(temporary, target);
   return { ...desktopPreferences };
+}
+
+function defaultHarnessWorkspace() {
+  return path.join(app.getPath('documents'), 'SpecFlow Engineering Studio', 'Agent Workspace');
+}
+
+function harnessOptions() {
+  return {
+    port: desktopPreferences.harnessPort,
+    workspace: desktopPreferences.harnessWorkspace || defaultHarnessWorkspace(),
+    knowledgeBaseUrl: runtimeInfo ? `http://${runtimeInfo.host}:${runtimeInfo.port}` : 'http://127.0.0.1:8790'
+  };
 }
 
 function listen(server, port, host) {
@@ -114,11 +136,58 @@ function registerIpc() {
     });
     return result.canceled ? '' : result.filePaths[0];
   });
+  ipcMain.handle('harness:choose-workspace', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择 DeepSeek Harness 项目目录',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    return result.canceled ? '' : result.filePaths[0];
+  });
   ipcMain.handle('desktop:open-data', () => shell.openPath(runtimeInfo.dataDir));
+  ipcMain.handle('harness:status', () => harnessRuntime ? harnessRuntime.getStatus() : { phase: 'idle', message: 'Harness 尚未初始化', url: '' });
+  ipcMain.handle('harness:start', () => harnessRuntime.start(harnessOptions()));
+  ipcMain.handle('harness:restart', () => harnessRuntime.restart(harnessOptions()));
+  ipcMain.handle('harness:preferences', () => ({
+    autoStart: desktopPreferences.harnessAutoStart,
+    port: desktopPreferences.harnessPort,
+    workspace: desktopPreferences.harnessWorkspace || defaultHarnessWorkspace()
+  }));
+  ipcMain.handle('harness:set-preferences', async (_event, patch = {}) => {
+    const port = Number(patch.port);
+    if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('Harness 端口必须是 1024–65535 的整数');
+    const previous = harnessOptions();
+    saveDesktopPreferences({
+      harnessAutoStart: patch.autoStart !== false,
+      harnessPort: port,
+      harnessWorkspace: String(patch.workspace || '').trim() || defaultHarnessWorkspace()
+    });
+    const next = harnessOptions();
+    harnessRuntime.configure(next);
+    if (previous.port !== next.port || previous.workspace !== next.workspace) return harnessRuntime.restart(next);
+    if (desktopPreferences.harnessAutoStart && harnessRuntime.getStatus().phase !== 'running') return harnessRuntime.start(next);
+    return harnessRuntime.getStatus();
+  });
+  ipcMain.handle('harness:register-project', async (_event, workspace) => {
+    const resolved = path.resolve(String(workspace || ''));
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) throw new Error('项目目录不存在');
+    if (harnessRuntime.getStatus().phase !== 'running') {
+      const status = await harnessRuntime.start(harnessOptions());
+      if (status.phase !== 'running') throw new Error(status.message || 'Harness 尚未就绪');
+    }
+    return harnessRuntime.registerWorkspace(resolved);
+  });
+  ipcMain.handle('balance:get', async () => {
+    const primary = await fetchDeepSeekBalance();
+    if (primary.configured !== false) return primary;
+    const llm = backend?.service?.settings?.llm || {};
+    if (!/deepseek/i.test(String(llm.baseUrl || '')) || !String(llm.apiKey || '').trim()) return primary;
+    return fetchDeepSeekBalance({ apiKey: llm.apiKey });
+  });
   ipcMain.handle('updates:status', () => updater.getStatus());
   ipcMain.handle('updates:check', () => updater.check());
   ipcMain.handle('updates:download', () => updater.download());
-  ipcMain.handle('updates:install', () => {
+  ipcMain.handle('updates:install', async () => {
+    try { await harnessRuntime?.stop(); } catch (error) { console.warn('Harness stop before update failed:', error); }
     const result = updater.install();
     if (result.launched) setTimeout(() => app.quit(), 900);
     return result;
@@ -154,7 +223,8 @@ function createMainWindow(url) {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
+      webviewTag: true,
       spellcheck: true
     }
   });
@@ -166,9 +236,10 @@ function createMainWindow(url) {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
         try {
+          if (capturePage === 'agent' && harnessRuntime) await harnessRuntime.start(harnessOptions());
           if (capturePage) {
             await mainWindow.webContents.executeJavaScript(`showPage(${JSON.stringify(capturePage)})`);
-            await new Promise(resolve => setTimeout(resolve, 180));
+            await new Promise(resolve => setTimeout(resolve, capturePage === 'agent' ? 1600 : 180));
           }
           if (captureSettings) {
             await mainWindow.webContents.executeJavaScript("(()=>{const panel=document.getElementById('settingsSection');panel.style.animation='none';panel.open=true;document.body.classList.add('settings-open');panel.scrollTop=panel.scrollHeight})()");
@@ -197,6 +268,30 @@ function createMainWindow(url) {
     if (/^https?:\/\//i.test(target)) shell.openExternal(target);
     return { action: 'deny' };
   });
+  mainWindow.webContents.on('will-attach-webview', (event, webPreferences, params) => {
+    delete webPreferences.preload;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
+    try {
+      const target = new URL(params.src || `http://127.0.0.1:${desktopPreferences.harnessPort}`);
+      if (target.protocol !== 'http:' || target.hostname !== '127.0.0.1' || Number(target.port || 80) !== desktopPreferences.harnessPort) event.preventDefault();
+    } catch { event.preventDefault(); }
+  });
+  mainWindow.webContents.on('did-attach-webview', (_event, contents) => {
+    contents.setWindowOpenHandler(({ url: target }) => {
+      if (/^https?:\/\//i.test(target)) shell.openExternal(target);
+      return { action: 'deny' };
+    });
+    contents.on('will-navigate', (event, target) => {
+      try {
+        const next = new URL(target);
+        if (next.hostname === '127.0.0.1' && Number(next.port || 80) === desktopPreferences.harnessPort) return;
+      } catch {}
+      event.preventDefault();
+      if (/^https?:\/\//i.test(target)) shell.openExternal(target);
+    });
+  });
   mainWindow.loadURL(url);
   if (desktopPreferences.autoCheckUpdates && app.isPackaged && !capturePath) {
     setTimeout(() => updater.check(), 6000);
@@ -223,7 +318,12 @@ else {
     updater.on('status', status => send('updates:status', status));
     registerIpc();
     const runtime = await startBackend();
+    harnessRuntime = new HarnessRuntime(harnessOptions());
+    harnessRuntime.on('status', status => send('harness:status', status));
     createMainWindow(runtime.url);
+    if (desktopPreferences.harnessAutoStart && !process.env.SPECFLOW_CAPTURE_PATH) {
+      harnessRuntime.start(harnessOptions()).catch(error => send('harness:status', { phase: 'error', message: error.message || String(error), url: '' }));
+    }
   }).catch(error => {
     dialog.showErrorBox('SpecFlow 启动失败', error && error.message ? error.message : String(error));
     app.quit();
@@ -236,5 +336,9 @@ app.on('activate', () => {
 
 app.on('window-all-closed', () => {
   if (backend && backend.server.listening) backend.server.close();
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin') Promise.resolve(harnessRuntime?.stop()).finally(() => app.quit());
+});
+
+app.on('before-quit', () => {
+  if (harnessRuntime?.child) harnessRuntime.child.kill();
 });

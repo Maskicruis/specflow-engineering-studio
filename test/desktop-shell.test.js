@@ -17,6 +17,7 @@ test('desktop shell owns the service and uses a native frameless window', () => 
   assert.match(main, /frame:\s*false/);
   assert.match(main, /contextIsolation:\s*true/);
   assert.match(main, /nodeIntegration:\s*false/);
+  assert.match(main, /webviewTag:\s*true/);
   assert.match(main, /EADDRINUSE/);
 });
 
@@ -26,7 +27,20 @@ test('desktop bridge exposes only bounded window and picker operations', () => {
   assert.match(preload, /toggleMaximize/);
   assert.match(preload, /updates:\s*\{/);
   assert.match(preload, /setAutoCheck/);
+  assert.match(preload, /harness:\s*\{/);
+  assert.match(preload, /balance:\s*\{/);
   assert.doesNotMatch(preload, /require:\s*require/);
+});
+
+test('desktop shell integrates the bounded DeepSeek Harness workspace', () => {
+  assert.match(main, /new HarnessRuntime/);
+  assert.match(main, /will-attach-webview/);
+  assert.match(main, /balance:get/);
+  assert.match(ui, /data-workspace-page="agent"/);
+  assert.match(ui, /id="harnessView"/);
+  assert.match(ui, /data-page="agent"/);
+  assert.match(ui, /id="balanceLabel"/);
+  assert.equal(pkg.dependencies['@deepseek-ai/dsh'], '0.1.0-rc.7');
 });
 
 test('desktop layout has titlebar, runtime status and settings drawer', () => {

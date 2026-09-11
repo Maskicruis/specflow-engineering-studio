@@ -13,7 +13,8 @@ test('界面包含问答与引用跳转高亮的接线', () => {
   assert.match(ui, /VIEWER\.load\(docId,\{page:Number\(page\),keyword:ref\|\|'',bbox:pdfBox,normalizedBbox:normalizedBox\}\)/, '一次加载并定位被引文档');
   assert.match(ui, /data-nbbox/, '传递归一化坐标供可靠高亮');
   assert.match(ui, /class="citation-link"/, '正文引用渲染为链接');
-  assert.match(ui, /原文链接：/, '回答末尾始终附原文链接');
+  assert.match(ui, /参考来源 · 点击可跳转并高亮 PDF 原文/, '回答末尾始终附可读的原文链接');
+  assert.match(ui, /class="answer-source-link"/, '文后来源包含真实超链接');
   assert.match(ui, /id="qMode"/, '可选择智能问答、仅资料库或通用对话');
   assert.match(ui, /id="chatMessages"/, '问答以多轮会话展示');
   assert.match(ui, /llmBase/, '有 LLM 配置输入');

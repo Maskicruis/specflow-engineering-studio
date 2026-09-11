@@ -189,7 +189,8 @@ function toLegacyItems(document) {
       page: item.page,
       order: item.order,
       type: item.type,
-      bbox: item.bbox ? item.bbox.pdf : null
+      bbox: item.bbox ? item.bbox.pdf : null,
+      bboxNormalized: item.bbox ? item.bbox.normalized : null
     };
     if (item.type === 'table') output.text = item.html || item.text || '';
     else if (item.text) output.text = item.text;

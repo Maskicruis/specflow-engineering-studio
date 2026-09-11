@@ -30,4 +30,4 @@ npm run release:publish
 
 发布脚本从 Git Credential Manager 或 `GH_TOKEN` / `GITHUB_TOKEN` 读取凭据，不把令牌写入文件。脚本会生成 `SHA256SUMS.txt`，创建或更新当前版本 Release，并上传 Setup、Portable、blockmap 和校验文件。
 
-版本号、Git 标签、Release 标签和安装包文件名必须一致，例如 `0.3.0` / `v0.3.0` / `SpecFlow-Engineering-Studio-Setup-0.3.0-x64.exe`。
+版本号、Git 标签、Release 标签和安装包文件名必须一致，例如 `0.4.0` / `v0.4.0` / `SpecFlow-Engineering-Studio-Setup-0.4.0-x64.exe`。

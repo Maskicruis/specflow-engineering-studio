@@ -1,8 +1,29 @@
 'use strict';
-/** 问答编排：检索（BM25 或 BM25+向量混合）→ 编号上下文 → LLM（可流式）→ 结构化引用 */
+/** 问答编排：可选 RAG 检索 -> 多轮上下文 -> LLM -> 可定位结构化引用。 */
 const { getScenario } = require('./scenarios');
 const { chat, chatStream, isConfigured } = require('./llm');
 const { searchDetailed } = require('./rag');
+
+const RETRIEVAL_MODES = new Set(['auto', 'knowledge', 'general']);
+
+function normalizeRetrievalMode(value) {
+  const mode = String(value || 'auto').toLowerCase();
+  return RETRIEVAL_MODES.has(mode) ? mode : 'auto';
+}
+
+function normalizeHistory(history, maxMessages = 12, maxChars = 12000) {
+  const output = [];
+  let used = 0;
+  const rows = Array.isArray(history) ? history.slice(-maxMessages) : [];
+  for (const row of rows) {
+    const role = row && (row.role === 'assistant' || row.role === 'user') ? row.role : '';
+    const content = String(row && row.content || '').trim().slice(0, 3000);
+    if (!role || !content || used + content.length > maxChars) continue;
+    used += content.length;
+    output.push({ role, content });
+  }
+  return output;
+}
 
 function buildContexts(hits, maxChars = 8000) {
   const lines = []; let used = 0; const citations = [];
@@ -14,38 +35,76 @@ function buildContexts(hits, maxChars = 8000) {
     const block = head + '\n' + text;
     if (used + block.length > maxChars) return;
     used += block.length; lines.push(block);
-    citations.push({ n, docId: hit.docId, title: hit.title, page: hit.page, itemId: hit.itemId, ref: hit.ref || '', type: hit.type, bbox: hit.bbox || null, snippet: hit.snippet || '', score: hit.score, matched: hit.matched || ['bm25'] });
+    const bbox = hit.bbox || null;
+    const bboxNormalized = hit.bboxNormalized || null;
+    citations.push({
+      n, docId: hit.docId, title: hit.title, page: hit.page, itemId: hit.itemId,
+      ref: hit.ref || '', type: hit.type, bbox, bboxNormalized,
+      sourceUrl: '/api/v1/documents/' + encodeURIComponent(hit.docId) + '/source#page=' + hit.page,
+      locate: { docId: hit.docId, page: hit.page, itemId: hit.itemId, bbox, bboxNormalized },
+      snippet: hit.snippet || '', score: hit.score, matched: hit.matched || ['bm25']
+    });
   });
   return { contextText: lines.join('\n\n'), citations };
 }
 
-function buildMessages(scenario, contextText, question) {
-  return [
-    { role: 'system', content: scenario.system },
-    { role: 'user', content: '资料片段：\n' + contextText + '\n\n问题：' + question + '\n\n请基于以上片段作答，并在引用处标注 [编号]。' }
-  ];
+function buildMessages(scenario, contextText, question, options = {}) {
+  const retrievalMode = normalizeRetrievalMode(options.retrievalMode);
+  const groundingRules = retrievalMode === 'knowledge'
+    ? [
+        '当前为“仅资料库”模式。只允许依据给定资料片段回答；资料不足时明确说明，不得用常识补齐。',
+        '每个来自资料的事实、数值或结论后必须立刻标注对应的 [片段编号]，不得把全部引用集中到段尾。',
+        '只可使用实际提供的片段编号，不得编造编号。'
+      ]
+    : [
+        '当前为“智能问答”模式。优先使用相关资料片段；资料不相关或不足时，可以使用通用知识回答，并明确区分资料依据与通用说明。',
+        '凡是来自资料的事实、数值或结论，必须在该句后立刻标注对应的 [片段编号]；通用知识不要添加虚假引用。',
+        '只可使用实际提供的片段编号，不得编造编号。'
+      ];
+  if (retrievalMode === 'general') {
+    groundingRules.splice(0, groundingRules.length,
+      '当前为“通用对话”模式。像通用大语言模型一样回答，不受资料库限制。',
+      '本轮没有资料引用，不要生成 [编号] 形式的虚假引用。');
+  }
+  const messages = [{ role: 'system', content: [scenario.system, ...groundingRules].join('\n') }];
+  messages.push(...normalizeHistory(options.history));
+  const prompt = contextText
+    ? '可用资料片段：\n' + contextText + '\n\n当前问题：' + question
+    : '当前问题：' + question;
+  messages.push({ role: 'user', content: prompt });
+  return messages;
 }
 
 async function retrieve(question, payload, deps) {
   const scenario = getScenario(payload.scenarioId || payload.scenario);
+  const retrievalMode = normalizeRetrievalMode(payload.retrievalMode);
+  if (retrievalMode === 'general') {
+    return { hits: [], retrieval: { mode: 'disabled', embeddingModel: '', vectors: 0, fused: false }, scenario, retrievalMode };
+  }
   const topK = payload.topK || scenario.topK;
   const docIds = Array.isArray(payload.docIds) ? payload.docIds : null;
   const detailed = await searchDetailed(deps.rag, question, { topK, docIds }, deps);
-  return { hits: detailed.hits, retrieval: detailed.retrieval, scenario };
+  return { hits: detailed.hits, retrieval: detailed.retrieval, scenario, retrievalMode };
 }
 
 async function ask(payload, deps) {
   const question = String(payload.question || '').trim();
-  const { hits, retrieval, scenario } = await retrieve(question, payload, deps);
+  const { hits, retrieval, scenario, retrievalMode } = await retrieve(question, payload, deps);
   const { contextText, citations } = buildContexts(hits);
-  const base = { scenario: scenario.id, retrieval };
-  if (!hits.length) return Object.assign({ ok: true, mode: 'empty', answer: '知识库中未检索到相关内容（可换个说法，或先导入相关 PDF）。', citations: [] }, base);
-  if (!isConfigured(deps.settings.llm)) {
-    return Object.assign({ ok: true, mode: 'retrieval', answer: '', citations, note: '尚未配置 LLM：以下为检索到的相关原文片段（可点击引用跳转原文核查）。配置 LLM 后即可生成综述式回答。' }, base);
+  const base = { scenario: scenario.id, retrieval, retrievalMode };
+  const configured = isConfigured(deps.settings.llm);
+  if (!configured) {
+    if (hits.length) return Object.assign({ ok: true, mode: 'retrieval', grounding: 'knowledge', answer: '', citations, note: '尚未配置 LLM：以下为检索到的原文片段。配置模型后可生成完整回答。' }, base);
+    if (retrievalMode === 'general') return Object.assign({ ok: true, mode: 'unavailable', grounding: 'general', answer: '', citations: [], note: '通用对话需要先在设置中配置 LLM。' }, base);
+    return Object.assign({ ok: true, mode: 'empty', grounding: 'knowledge', answer: '资料库中未检索到相关内容。可切换“通用对话”，或配置 LLM 后使用“智能问答”。', citations: [] }, base);
   }
-  const result = await chat(deps.settings.llm, buildMessages(scenario, contextText, question));
-  if (!result.ok) return Object.assign({ ok: false, mode: 'llm-error', error: result.error, citations }, base);
-  return Object.assign({ ok: true, mode: 'llm', answer: result.content, citations, usage: result.usage || null }, base);
+  if (retrievalMode === 'knowledge' && !hits.length) {
+    return Object.assign({ ok: true, mode: 'empty', grounding: 'knowledge', answer: '资料库中未检索到足以回答此问题的内容。', citations: [] }, base);
+  }
+  const grounding = hits.length && retrievalMode !== 'general' ? 'knowledge' : 'general';
+  const result = await chat(deps.settings.llm, buildMessages(scenario, contextText, question, { retrievalMode, history: payload.history }));
+  if (!result.ok) return Object.assign({ ok: false, mode: 'llm-error', grounding, error: result.error, citations }, base);
+  return Object.assign({ ok: true, mode: 'llm', grounding, answer: result.content, citations: grounding === 'general' ? [] : citations, usage: result.usage || null }, base);
 }
 
 /** 流式问答：emit({type:'citations'|'delta'|'done'|'error', ...}) */
@@ -53,20 +112,26 @@ async function askStream(payload, deps, emit) {
   try {
     const question = String(payload.question || '').trim();
     if (!question) { emit({ type: 'error', error: '问题不能为空' }); return; }
-    const { hits, retrieval, scenario } = await retrieve(question, payload, deps);
+    const { hits, retrieval, scenario, retrievalMode } = await retrieve(question, payload, deps);
     const { contextText, citations } = buildContexts(hits);
-    emit({ type: 'citations', citations, retrieval, scenario: scenario.id });
-    if (!hits.length) { emit({ type: 'done', mode: 'empty', answer: '知识库中未检索到相关内容。', citations: [] }); return; }
-    if (!isConfigured(deps.settings.llm)) {
-      emit({ type: 'done', mode: 'retrieval', answer: '', citations, note: '尚未配置 LLM：以下为检索到的相关原文片段（可点击引用跳转原文核查）。' });
+    const configured = isConfigured(deps.settings.llm);
+    const grounding = hits.length && retrievalMode !== 'general' ? 'knowledge' : 'general';
+    emit({ type: 'citations', citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, grounding, scenario: scenario.id });
+    if (!configured) {
+      if (hits.length) emit({ type: 'done', mode: 'retrieval', grounding: 'knowledge', answer: '', citations, note: '尚未配置 LLM：以下为检索到的相关原文片段。' });
+      else emit({ type: 'done', mode: retrievalMode === 'general' ? 'unavailable' : 'empty', grounding, answer: '', citations: [], note: retrievalMode === 'general' ? '通用对话需要先配置 LLM。' : '资料库中未检索到相关内容。' });
       return;
     }
-    const result = await chatStream(deps.settings.llm, buildMessages(scenario, contextText, question), delta => emit({ type: 'delta', text: delta }));
-    if (!result.ok) { emit({ type: 'error', error: result.error, citations }); return; }
-    emit({ type: 'done', mode: 'llm', answer: result.content, citations, retrieval, scenario: scenario.id });
+    if (retrievalMode === 'knowledge' && !hits.length) {
+      emit({ type: 'done', mode: 'empty', grounding: 'knowledge', answer: '资料库中未检索到足以回答此问题的内容。', citations: [] });
+      return;
+    }
+    const result = await chatStream(deps.settings.llm, buildMessages(scenario, contextText, question, { retrievalMode, history: payload.history }), delta => emit({ type: 'delta', text: delta }));
+    if (!result.ok) { emit({ type: 'error', error: result.error, citations: grounding === 'general' ? [] : citations }); return; }
+    emit({ type: 'done', mode: 'llm', grounding, answer: result.content, citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, scenario: scenario.id });
   } catch (error) {
     emit({ type: 'error', error: String(error && error.message || error) });
   }
 }
 
-module.exports = { ask, askStream, buildContexts, buildMessages, retrieve };
+module.exports = { ask, askStream, buildContexts, buildMessages, normalizeHistory, normalizeRetrievalMode, retrieve };

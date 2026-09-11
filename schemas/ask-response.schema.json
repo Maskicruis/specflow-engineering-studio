@@ -31,6 +31,7 @@
             "llm",
             "retrieval",
             "empty",
+            "unavailable",
             "llm-error"
           ],
           "description": "llm=模型生成；retrieval=未配 LLM 时的检索结果"
@@ -51,6 +52,14 @@
             "research",
             "general"
           ]
+        },
+        "retrievalMode": {
+          "type": "string",
+          "enum": ["auto", "knowledge", "general"]
+        },
+        "grounding": {
+          "type": "string",
+          "enum": ["knowledge", "general"]
         },
         "question": {
           "type": "string"
@@ -76,7 +85,8 @@
               "type": "string",
               "enum": [
                 "bm25",
-                "hybrid"
+                "hybrid",
+                "disabled"
               ]
             },
             "embeddingModel": {

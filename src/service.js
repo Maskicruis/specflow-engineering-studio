@@ -341,7 +341,9 @@ class KnowledgeBaseService {
         asset: item.asset || '',
         caption: item.caption || '',
         bbox: item.bbox ? item.bbox.pdf : null,
-        locate: { docId: record.id, page: item.page, itemId: item.id, bbox: item.bbox ? item.bbox.pdf : null }
+        bboxNormalized: item.bbox ? item.bbox.normalized : null,
+        sourceUrl: '/api/v1/documents/' + encodeURIComponent(record.id) + '/source#page=' + item.page,
+        locate: { docId: record.id, page: item.page, itemId: item.id, bbox: item.bbox ? item.bbox.pdf : null, bboxNormalized: item.bbox ? item.bbox.normalized : null }
       }))
     };
   }
@@ -354,7 +356,7 @@ class KnowledgeBaseService {
       features: [
         'pdf-parse(mineru)', 'canonical-document', 'page-bbox-coordinates',
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
-        'citation-jump-highlight', 'conversation-history', 'item-export'
+        'citation-jump-highlight', 'inline-citation-links', 'conversation-history', 'multi-turn-chat', 'general-llm-fallback', 'item-export'
       ],
       retrieval: { default: 'bm25', hybrid: embeddings.isConfigured(this.settings.llm) ? 'available' : 'requires embeddingModel' },
       schemas: {
@@ -384,7 +386,9 @@ class KnowledgeBaseService {
       question,
       scenarioId: payload.scenario,
       topK: payload.topK,
-      docIds: Array.isArray(payload.docIds) ? payload.docIds : null
+      docIds: Array.isArray(payload.docIds) ? payload.docIds : null,
+      retrievalMode: payload.retrievalMode,
+      history: Array.isArray(payload.history) ? payload.history : []
     }, this.deps());
     const conversationId = this.recordConversation({
       question,
@@ -393,6 +397,8 @@ class KnowledgeBaseService {
       answer: result.answer || '',
       citations: result.citations || [],
       retrieval: result.retrieval || null,
+      retrievalMode: result.retrievalMode || 'auto',
+      grounding: result.grounding || '',
       durationMs: Date.now() - started
     });
     return Object.assign({ conversationId, question }, result);
@@ -403,20 +409,22 @@ class KnowledgeBaseService {
     const question = String(payload.question || '').trim();
     if (!question) { emit({ type: 'error', error: '问题不能为空' }); return; }
     const started = Date.now();
-    let answer = ''; let citations = []; let mode = ''; let retrieval = null;
+    let answer = ''; let citations = []; let mode = ''; let retrieval = null; let retrievalMode = payload.retrievalMode || 'auto'; let grounding = '';
     await askStreamContext({
       question,
       scenarioId: payload.scenario,
       topK: payload.topK,
-      docIds: Array.isArray(payload.docIds) ? payload.docIds : null
+      docIds: Array.isArray(payload.docIds) ? payload.docIds : null,
+      retrievalMode: payload.retrievalMode,
+      history: Array.isArray(payload.history) ? payload.history : []
     }, this.deps(), event => {
-      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; }
+      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; }
       if (event.type === 'delta') answer += event.text || '';
-      if (event.type === 'done') { mode = event.mode || 'llm'; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
+      if (event.type === 'done') { mode = event.mode || 'llm'; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
       emit(event);
     });
     if (mode) {
-      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, durationMs: Date.now() - started });
+      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, retrievalMode, grounding, durationMs: Date.now() - started });
       emit({ type: 'saved', conversationId });
     }
   }

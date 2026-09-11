@@ -20,7 +20,7 @@ const fixture = {
   coordinateSystems: { pdf: { origin: 'bottom-left', unit: 'point' } },
   pages: [{ number: 1, width: 595, height: 842, items: ['p0001-i000000', 'p0001-i000001'] }],
   items: [
-    { id: 'p0001-i000000', page: 1, order: 0, sourceIndex: 0, type: 'text', text: '12.2.7 消防车道净宽度不应小于4.0m，转弯半径不应小于9m。', bbox: { pdf: [110, 555, 318, 570], normalized: null } },
+    { id: 'p0001-i000000', page: 1, order: 0, sourceIndex: 0, type: 'text', text: '12.2.7 消防车道净宽度不应小于4.0m，转弯半径不应小于9m。', bbox: { pdf: [110, 555, 318, 570], normalized: [0.18, 0.32, 0.54, 0.34] } },
     { id: 'p0001-i000001', page: 1, order: 1, sourceIndex: 1, type: 'table', html: '<table><tr><td>进站道路</td><td>4.0m</td></tr></table>', bbox: { pdf: [50, 400, 500, 470], normalized: null } }
   ]
 };
@@ -41,6 +41,8 @@ test('能力清单：暴露 schema 与联动接口', () => {
   assert.ok(caps.endpoints.some(e => e.path === '/api/v1/export/items'), '含导出接口');
   assert.ok(caps.schemas.ask && caps.schemas.citation, '含 schema 契约');
   assert.ok(caps.features.includes('citation-jump-highlight'));
+  assert.ok(caps.features.includes('general-llm-fallback'));
+  assert.ok(caps.features.includes('inline-citation-links'));
 });
 
 test('结构化条目导出：卡片带条文号与定位坐标', () => {
@@ -51,6 +53,8 @@ test('结构化条目导出：卡片带条文号与定位坐标', () => {
   const first = out.cards[0];
   assert.equal(first.ref, '12.2.7');
   assert.deepEqual(first.locate.bbox, [110, 555, 318, 570]);
+  assert.deepEqual(first.locate.bboxNormalized, [0.18, 0.32, 0.54, 0.34]);
+  assert.match(first.sourceUrl, /\/source#page=1$/);
 });
 
 test('混合检索：配置 embedding 后 BM25+向量 RRF 融合', async () => {

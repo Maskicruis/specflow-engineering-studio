@@ -77,9 +77,11 @@ function releaseNotes() {
 
 > SpecFlow 安装包不内置 MinerU。首次使用请在右上角“设置”中选择实际的 \`mineru.exe\` 并点击“检测”。
 
-![工程助手](https://raw.githubusercontent.com/${repository}/main/docs/assets/engineering-assistant-v0.3.png)
+![多轮工程助手与行内引用](https://raw.githubusercontent.com/${repository}/main/docs/assets/engineering-assistant-v0.4.png)
 
 ![文档数据库](https://raw.githubusercontent.com/${repository}/main/docs/assets/document-database-v0.3.png)
+
+![PDF 原文定位与高亮](https://raw.githubusercontent.com/${repository}/main/docs/assets/source-review-v0.4.png)
 
 ![软件更新设置](https://raw.githubusercontent.com/${repository}/main/docs/assets/software-update-v0.3.png)
 

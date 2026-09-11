@@ -57,9 +57,60 @@ test('配置 LLM 后：生成式回答并保留可定位引用', async () => {
   assert.match(res.answer, /STUB/);
   assert.ok(res.citations.length >= 1, '引用不为空');
   assert.ok(res.citations[0].page === 1 && Array.isArray(res.citations[0].bbox), '引用可定位');
+  assert.deepEqual(res.citations[0].bboxNormalized, [0.08, 0.12, 0.7, 0.17], '引用包含稳定的归一化高亮坐标');
+  assert.deepEqual(res.citations[0].locate.bboxNormalized, res.citations[0].bboxNormalized, '标准定位对象包含归一化坐标');
+  assert.match(res.citations[0].sourceUrl, /\/source#page=1$/, '引用包含可直接打开原页的 URL');
   const sent = JSON.stringify(stub.state.lastBody || {});
   assert.match(sent, /片段 1/, '提示词中包含带编号的上下文片段');
   assert.match(sent, /chat\/completions|messages/, '走 OpenAI 兼容接口');
+  await stub.close();
+});
+
+test('智能问答无资料命中时仍调用通用模型', async () => {
+  const stub = createStubLlm({ answer: '【STUB 通用回答】这是一个通用知识问题。' });
+  const port = await stub.listen();
+  const emptyLibrary = path.join(root, '空资料库');
+  fs.mkdirSync(emptyLibrary, { recursive: true });
+  const settings = { library: emptyLibrary, llm: { baseUrl: 'http://127.0.0.1:' + port + '/v1', apiKey: '', model: 'stub-model', timeoutMs: 10000 } };
+  const rag = new RagIndex(settings);
+  const res = await ask({
+    question: '请解释什么是检索增强生成。',
+    scenarioId: 'general',
+    retrievalMode: 'auto',
+    history: [{ role: 'user', content: '我们刚才讨论了工程规范。' }, { role: 'assistant', content: '好的。' }]
+  }, { rag, settings });
+  assert.equal(res.mode, 'llm');
+  assert.equal(res.grounding, 'general');
+  assert.deepEqual(res.citations, []);
+  const messages = stub.state.lastBody.messages;
+  assert.ok(messages.some(message => message.role === 'user' && message.content === '我们刚才讨论了工程规范。'), '保留多轮上下文');
+  assert.match(messages.at(-1).content, /检索增强生成/, '发送当前通用问题');
+  await stub.close();
+});
+
+test('通用对话跳过资料检索且不生成资料引用', async () => {
+  const stub = createStubLlm({ answer: '【STUB】通用回答，不附虚假引用。' });
+  const port = await stub.listen();
+  const settings = { library, llm: { baseUrl: 'http://127.0.0.1:' + port + '/v1', apiKey: '', model: 'stub-model', timeoutMs: 10000 } };
+  const rag = new RagIndex(settings);
+  const res = await ask({ question: '写一个简短的项目周报模板。', scenarioId: 'general', retrievalMode: 'general' }, { rag, settings });
+  assert.equal(res.retrieval.mode, 'disabled');
+  assert.equal(res.grounding, 'general');
+  assert.deepEqual(res.citations, []);
+  assert.doesNotMatch(JSON.stringify(stub.state.lastBody), /可用资料片段|\[片段 1\]/);
+  await stub.close();
+});
+
+test('仅资料库模式无命中时不让模型用常识补齐', async () => {
+  const stub = createStubLlm();
+  const port = await stub.listen();
+  const emptyLibrary = path.join(root, '另一空资料库');
+  fs.mkdirSync(emptyLibrary, { recursive: true });
+  const settings = { library: emptyLibrary, llm: { baseUrl: 'http://127.0.0.1:' + port + '/v1', apiKey: '', model: 'stub-model', timeoutMs: 10000 } };
+  const rag = new RagIndex(settings);
+  const res = await ask({ question: '资料里没有的问题', scenarioId: 'design', retrievalMode: 'knowledge' }, { rag, settings });
+  assert.equal(res.mode, 'empty');
+  assert.equal(stub.state.calls, 0);
   await stub.close();
 });
 

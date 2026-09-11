@@ -22,6 +22,11 @@ test('viewer contains the compatibility fallback and aligned overlay wrapper', (
   assert.match(html, /function safeTableHtml/);
   assert.match(html, /function showParserState/);
   assert.match(html, /尚未安装或配置 MinerU/);
+  assert.match(html, /function fitPage/);
+  assert.match(html, /page\.view/);
+  assert.match(html, /hlNormalized/);
+  assert.match(html, /top:45px;z-index:300/);
+  assert.match(html, /关闭阅读器/);
 });
 
 test('workspace shell keeps the primary workflow focused and accessible', () => {
@@ -40,6 +45,8 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /id="parserBackend"/);
   assert.match(html, /id="parseTables"/);
   assert.match(html, /id="llmEmbed"/);
+  assert.match(html, /id="qMode"/);
+  assert.match(html, /id="chatMessages"/);
   assert.match(html, /function clearLlmKey/);
   assert.match(html, /function renderUpdateStatus/);
   assert.match(html, /id="autoCheckUpdates"/);

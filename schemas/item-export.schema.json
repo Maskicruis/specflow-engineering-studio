@@ -82,6 +82,15 @@
               }
             ]
           },
+          "bboxNormalized": {
+            "oneOf": [
+              { "type": "null" },
+              { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 4, "maxItems": 4 }
+            ]
+          },
+          "sourceUrl": {
+            "type": "string"
+          },
           "locate": {
             "type": "object",
             "properties": {
@@ -105,6 +114,12 @@
                       "type": "number"
                     }
                   }
+                ]
+              },
+              "bboxNormalized": {
+                "oneOf": [
+                  { "type": "null" },
+                  { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 4, "maxItems": 4 }
                 ]
               }
             }

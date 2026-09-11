@@ -25,7 +25,7 @@ SpecFlow 是桌面工作台，MinerU 是独立的 PDF 解析引擎；安装 Spec
 Release 附带 `SHA256SUMS.txt`。PowerShell 可用以下命令核对：
 
 ```powershell
-Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.3.0-x64.exe -Algorithm SHA256
+Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.4.0-x64.exe -Algorithm SHA256
 ```
 
 输出应与 `SHA256SUMS.txt` 对应行一致。

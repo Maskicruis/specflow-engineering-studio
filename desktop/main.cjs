@@ -48,7 +48,8 @@ function listen(server, port, host) {
 }
 
 async function startBackend() {
-  const dataDir = path.join(app.getPath('userData'), 'data');
+  const captureDataDir = process.env.SPECFLOW_CAPTURE_PATH && process.env.SPECFLOW_CAPTURE_DATA_DIR;
+  const dataDir = captureDataDir ? path.resolve(captureDataDir) : path.join(app.getPath('userData'), 'data');
   const firstRun = !fs.existsSync(path.join(dataDir, 'settings.json'));
   process.env.KB_DATA_DIR = dataDir;
 
@@ -134,6 +135,10 @@ function createMainWindow(url) {
   const capturePath = process.env.SPECFLOW_CAPTURE_PATH;
   const capturePage = process.env.SPECFLOW_CAPTURE_PAGE;
   const captureSettings = process.env.SPECFLOW_CAPTURE_SETTINGS === '1';
+  let captureCitation = null;
+  try { captureCitation = JSON.parse(process.env.SPECFLOW_CAPTURE_CITATION || 'null'); } catch { captureCitation = null; }
+  let captureChat = null;
+  try { captureChat = JSON.parse(process.env.SPECFLOW_CAPTURE_CHAT || 'null'); } catch { captureChat = null; }
   mainWindow = new BrowserWindow({
     width: 1460,
     height: 920,
@@ -168,6 +173,14 @@ function createMainWindow(url) {
           if (captureSettings) {
             await mainWindow.webContents.executeJavaScript("(()=>{const panel=document.getElementById('settingsSection');panel.style.animation='none';panel.open=true;document.body.classList.add('settings-open');panel.scrollTop=panel.scrollHeight})()");
             await new Promise(resolve => setTimeout(resolve, 260));
+          }
+          if (captureChat && captureChat.question) {
+            await mainWindow.webContents.executeJavaScript(`(()=>{const p=${JSON.stringify(captureChat)};showPage('assistant');appendUserTurn(p.question);const turn=appendAssistantTurn();const empty=document.getElementById('assistantEmpty');if(empty)empty.style.display='none';turn.note.textContent=p.label||'资料库增强回答';turn.answer.innerHTML=answerHtml(p.answer||'',p.citations||[]);turn.cites.innerHTML=(p.citations||[]).map(citationCard).join('');document.getElementById('qState').textContent=(p.label||'资料库增强回答')+' · 引用 '+(p.citations||[]).length+' 条'})()`);
+            await new Promise(resolve => setTimeout(resolve, 300));
+          }
+          if (captureCitation && captureCitation.docId) {
+            await mainWindow.webContents.executeJavaScript(`openCitation(${JSON.stringify(captureCitation.docId)},${Number(captureCitation.page) || 1},${JSON.stringify(captureCitation.ref || '')},${JSON.stringify(captureCitation.bbox || '')},${JSON.stringify(captureCitation.bboxNormalized || '')},${JSON.stringify(captureCitation.itemId || '')})`);
+            await new Promise(resolve => setTimeout(resolve, 1200));
           }
           const image = await mainWindow.webContents.capturePage();
           fs.writeFileSync(path.resolve(capturePath), image.toPNG());

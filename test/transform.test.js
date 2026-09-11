@@ -52,6 +52,7 @@ test('keeps the real table width when producing the browser compatibility view',
   });
   const table = toLegacyItems(document).find(item => item.type === 'table');
   assert.deepEqual(table.bbox, [110.13, 77.46, 485.19, 538.83]);
+  assert.deepEqual(table.bboxNormalized, [0.185, 0.36, 0.815, 0.908]);
   assert.match(table.text, /<table>/);
   assert.match(table.caption, /表 5\.4\.1/);
 });

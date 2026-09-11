@@ -58,6 +58,7 @@ class RagIndex {
           docId, title: meta.title || '', page: item.page, itemId: item.id, type: item.type,
           ref: refOf(text), text, len: toks.length, tf,
           bbox: item.bbox && item.bbox.pdf ? item.bbox.pdf : null,
+          bboxNormalized: item.bbox && item.bbox.normalized ? item.bbox.normalized : null,
           asset: item.asset || '', html: item.html || ''
         });
       }
@@ -98,9 +99,9 @@ class RagIndex {
       seen.add(key); unique.push(hit);
       if (unique.length >= topK) break;
     }
-    return unique.map(hit => ({
-      docId: hit.entry.docId, title: hit.entry.title, page: hit.entry.page, itemId: hit.entry.itemId,
-      type: hit.entry.type, ref: hit.entry.ref, bbox: hit.entry.bbox, asset: hit.entry.asset,
+    return unique.map((hit, index) => ({
+      n: index + 1, docId: hit.entry.docId, title: hit.entry.title, page: hit.entry.page, itemId: hit.entry.itemId,
+      type: hit.entry.type, ref: hit.entry.ref, bbox: hit.entry.bbox, bboxNormalized: hit.entry.bboxNormalized, asset: hit.entry.asset,
       score: Math.round(hit.score * 1000) / 1000,
       snippet: makeSnippet(hit.entry.text, qTokens)
     }));
@@ -164,11 +165,11 @@ async function searchDetailed(index, query, options = {}, deps = {}) {
     vectorTop.forEach((v, rank) => {
       const key = v.docId + '|' + v.itemId;
       const entry = entryByKey.get(key); if (!entry) return;
-      const cur = fused.get(key) || { hit: { docId: entry.docId, title: entry.title, page: entry.page, itemId: entry.itemId, type: entry.type, ref: entry.ref, bbox: entry.bbox, asset: entry.asset, score: 0, snippet: makeSnippet(entry.text, []) }, score: 0, from: [] };
+      const cur = fused.get(key) || { hit: { docId: entry.docId, title: entry.title, page: entry.page, itemId: entry.itemId, type: entry.type, ref: entry.ref, bbox: entry.bbox, bboxNormalized: entry.bboxNormalized, asset: entry.asset, score: 0, snippet: makeSnippet(entry.text, []) }, score: 0, from: [] };
       cur.score += 1 / (K + rank + 1); cur.from.push('vector'); fused.set(key, cur);
     });
     const hits = [...fused.values()].sort((a, b) => b.score - a.score).slice(0, topK)
-      .map(item => Object.assign({}, item.hit, { score: Math.round(item.score * 10000) / 10000, matched: item.from }));
+      .map((item, index) => Object.assign({}, item.hit, { n: index + 1, score: Math.round(item.score * 10000) / 10000, matched: item.from }));
     meta.mode = 'hybrid'; meta.embeddingModel = String(llm.embeddingModel || ''); meta.vectors = vectorCount; meta.fused = true;
     return { hits, retrieval: meta };
   } catch (error) {

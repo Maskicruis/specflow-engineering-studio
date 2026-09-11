@@ -1,6 +1,6 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "工程文档智能工作台：工程助手 + MinerU 文档数据库 + 原文定位与高亮",
   "type": "commonjs",

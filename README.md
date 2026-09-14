@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-48%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-52%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -16,7 +16,9 @@
 - **项目工作区**：从“DeepSeek 智能体”页打开任意本地工程目录，项目会登记到 Harness 左侧记录中，后续可以继续原会话。
 - **API 余额**：自动读取官方 DSH 凭据，在标题栏显示 DeepSeek API 余额；密钥仅在主进程使用，不会暴露给页面。
 - **完整工程助手**：像通用大模型客户端一样连续对话；可选“智能问答”“仅资料库”“通用对话”，资料不足时不再让整套系统失去通用问答能力。
-- **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模。
+- **最近对话**：左侧显示类似 Codex 的最近对话列表；点击即可恢复完整多轮内容、引用和检索范围，也可继续追问。
+- **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模；支持新建、重命名和删除文件分组，以及逐文档归组。
+- **分组问答**：问答范围可选择全部文档、指定分组、未分组或单个文档；空分组不会意外回退到全库检索。
 - **MinerU 精准解析**：按真实阅读顺序输出 Markdown/结构化内容，保留表格、图片、页码和页内坐标。
 - **引用与原文核查**：引用编号在相关句子后直接显示为超链接，回答末尾另列“文档名 + 页码 + 条文号 + 打开原文”链接；点击后直接跳回 PDF 对应页并高亮命中区域。
 - **完整 PDF 阅读器**：自动适合页面，阅读器避开原生标题栏，顶部和工具栏均保留关闭入口。
@@ -45,10 +47,11 @@
 1. 打开“DeepSeek 智能体”，在左侧项目记录中继续已有工程，或点击“打开项目”登记新的本地目录。
 2. 在 DSH 设置中配置 DeepSeek API Key 后，标题栏会显示可用余额；点击余额可刷新。
 3. 打开“设置”，选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
-4. 在“文档数据库”页拖入或选择工程 PDF，点击“上传并解析”。
-5. 在“知识库问答”中选择智能问答、仅资料库或通用对话。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
-6. Harness Agent 可通过自动安装的 `specflow-knowledge-base` Skill 调用本机知识库 API，并保留可追溯引用。
-7. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，项目记录和资料库不会被删除。
+4. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
+5. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
+6. 左侧“最近对话”可恢复并继续既有问答，新对话按钮会创建一条独立记录。
+7. Harness Agent 可通过自动安装的 `specflow-knowledge-base` Skill 调用本机知识库 API，并保留可追溯引用。
+8. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，项目记录、对话、分组和资料库不会被删除。
 
 ## 独立运行与 Agent 接入
 
@@ -63,16 +66,18 @@ node .\cli.js serve --host 127.0.0.1 --port 8890 --no-open
 ```text
 GET   /api/v1/health
 GET   /api/v1/capabilities
+GET   /api/v1/groups
 GET   /api/v1/search?q=消防车道&topK=8
 POST  /api/v1/ask
 POST  /api/v1/ask/stream
+GET   /api/v1/conversations?summary=1
 GET   /api/v1/documents/:id/content
 GET   /api/v1/documents/:id/source
 POST  /api/v1/export/items
 PATCH /api/v1/settings
 ```
 
-响应采用统一成功/错误封装；请求支持 `retrievalMode: auto|knowledge|general` 和多轮 `history`。引用包含文档 ID、页码、条文号、PDF 点坐标 `bbox` 与稳定的 `bboxNormalized`，适合被 Agent 消费并回溯证据。
+响应采用统一成功/错误封装；请求支持 `retrievalMode: auto|knowledge|general`、`conversationId`、多轮 `history`、`groupId` 和 `docIds`。引用包含文档 ID、页码、条文号、PDF 点坐标 `bbox` 与稳定的 `bboxNormalized`，适合被 Agent 消费并回溯证据。
 
 ## 数据与隐私
 
@@ -91,6 +96,6 @@ npm run desktop
 npm run build:desktop
 ```
 
-`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。v0.5.1 自动化验证为 **48/48 通过**，覆盖 DSH 启动、项目登记、余额密钥隔离、桌面外壳、更新下载与哈希校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、多轮上下文、正文/文后原文链接、引用定位和标准接口。
+`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。v0.6.0 自动化验证为 **52/52 通过**，覆盖 DSH 启动、项目登记、余额密钥隔离、最近对话恢复、文件分组、分组检索、更新下载与哈希校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、多轮上下文、正文/文后原文链接、引用定位和标准接口。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.5.1 发布说明](docs/RELEASE_NOTES_0.5.1_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.6.0 发布说明](docs/RELEASE_NOTES_0.6.0_CN.md)

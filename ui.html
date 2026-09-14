@@ -40,6 +40,12 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 @media(max-width:760px){.database-body{overflow:auto}.database-grid{height:auto;grid-template-columns:1fr}.database-grid>.panel{min-height:420px}.assistant-stream{padding:20px 14px 8px}.assistant-footer{padding:8px 14px 16px}.page-title small{display:none}}
 @media(max-width:680px){.app-shell{height:100vh;display:flex;flex-direction:column}.sidebar{height:52px;flex:0 0 52px;position:static}.workspace{flex:1}.nav{margin-left:auto}.content{width:100%;padding:0}.page-bar{height:52px;flex-basis:52px;padding:0 12px}.side-status{display:none}.database-body{padding:12px}.database-search{width:100%}.database-count{display:none}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+.recent-section{min-height:0;display:flex;flex-direction:column;gap:6px}.recent-head{display:flex;align-items:center;justify-content:space-between;padding:0 10px}.recent-head .nav-label{padding:0}.recent-refresh{border:0;background:transparent;color:var(--text-3);cursor:pointer;font-size:14px;padding:2px 5px;border-radius:5px}.recent-refresh:hover{color:var(--text);background:var(--surface-3)}.recent-list{display:flex;flex-direction:column;gap:2px;max-height:min(38vh,330px);overflow:auto}.recent-item{position:relative;display:flex;align-items:center;gap:7px;width:100%;min-width:0;border:0;border-radius:8px;background:transparent;color:var(--text-2);padding:7px 28px 7px 10px;text-align:left;cursor:pointer}.recent-item:hover,.recent-item.active{background:var(--surface-3);color:var(--text)}.recent-item svg{width:14px;height:14px;stroke:currentColor;flex:0 0 auto}.recent-copy{min-width:0}.recent-title{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recent-meta{font-size:9px;color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.recent-delete{position:absolute;right:5px;top:8px;border:0;background:transparent;color:var(--text-3);cursor:pointer;opacity:0}.recent-item:hover .recent-delete{opacity:1}.recent-delete:hover{color:var(--red)}
+.database-grid{grid-template-columns:185px minmax(0,1fr) 286px}.group-panel{height:100%;display:flex;flex-direction:column}.group-panel .panel-head{padding:13px}.group-list{padding:7px;overflow:auto;display:flex;flex-direction:column;gap:3px}.group-item{position:relative;display:flex;align-items:center;gap:7px;width:100%;min-width:0;border:0;border-radius:8px;padding:8px 50px 8px 9px;background:transparent;color:var(--text-2);cursor:pointer;text-align:left}.group-item:hover,.group-item.active{background:var(--surface-3);color:var(--text)}.group-item .group-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}.group-item .group-count{position:absolute;right:8px;color:var(--text-3);font-size:9px}.group-item.user-group .group-count{right:43px}.group-actions{position:absolute;right:5px;display:none;gap:1px}.group-item:hover .group-actions{display:flex}.group-action{width:18px;height:18px;border:0;border-radius:4px;background:transparent;color:var(--text-3);padding:0;cursor:pointer}.group-action:hover{background:var(--surface);color:var(--text)}.group-create{margin:8px}.doc-group-select{min-width:115px;max-width:150px;min-height:29px;padding:4px 7px}.import-group{width:100%;margin-top:10px}
+.recent-copy{display:flex;flex-direction:column}
+@media(max-width:1120px){.database-grid{grid-template-columns:165px minmax(0,1fr) 250px}.library-table td,.library-table th{padding:10px}}
+@media(max-width:960px){.recent-section{display:none}.database-grid{grid-template-columns:150px minmax(0,1fr)}.database-grid .side-stack{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.doc-cell{min-width:170px}}
+@media(max-width:760px){.database-grid{grid-template-columns:1fr}.group-panel{min-height:220px}.database-grid .side-stack{grid-column:auto;display:flex}.recent-section{display:none}}
 </style></head><body>
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3.8h8l4 4V12M14 4v4h4M8 11h6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="15" rx="6" ry="2.4" stroke="white" stroke-width="1.5"/><path d="M6 15v3.4c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V15" stroke="white" stroke-width="1.5"/></svg></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Desktop</small></div></div>
@@ -58,6 +64,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
       <button class="nav-item" data-page="assistant" aria-label="知识库问答"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg><span>知识库问答</span><span class="nav-key">Ctrl 2</span></button>
       <button class="nav-item" data-page="database" aria-label="文档数据库"><svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="3" stroke-width="1.7"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke-width="1.7"/></svg><span>文档数据库</span><span class="nav-key">Ctrl 3</span></button>
     </nav>
+    <section class="recent-section" aria-label="最近对话"><div class="recent-head"><div class="nav-label">最近对话</div><button class="recent-refresh" data-act="refreshConversations" title="刷新最近对话">↻</button></div><div id="recentConversations" class="recent-list"><div class="muted" style="padding:6px 10px">正在读取…</div></div></section>
     <div class="sidebar-spacer"></div>
     <div class="side-status"><div class="side-status-top"><span class="pulse"></span>本地服务已连接</div><div id="stats" class="muted">正在读取资料库…</div></div>
   </aside>
@@ -93,11 +100,12 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
           <div class="page-actions"><span class="chip">PDF · MinerU</span><button class="btn btn-primary" data-act="chooseImport">导入文档</button></div>
         </header>
         <div class="database-body">
-          <div class="database-toolbar"><label class="database-search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke-width="1.7"/><path d="m16 16 4 4" stroke-width="1.7" stroke-linecap="round"/></svg><input id="dbSearch" aria-label="搜索文档" placeholder="搜索文档名称…"></label><span id="dbCount" class="database-count">正在读取数据库…</span></div>
+          <div class="database-toolbar"><label class="database-search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke-width="1.7"/><path d="m16 16 4 4" stroke-width="1.7" stroke-linecap="round"/></svg><input id="dbSearch" aria-label="搜索文档" placeholder="搜索当前分组中的文档…"></label><span id="activeGroupLabel" class="chip">全部文档</span><span id="dbCount" class="database-count">正在读取数据库…</span></div>
           <div class="database-grid">
-            <div class="panel"><div class="panel-head"><div><h3>工程文档</h3><div class="muted">解析状态和索引规模实时更新</div></div></div><div class="library-wrap"><table class="library-table"><thead><tr><th>文档</th><th>类型</th><th>状态</th><th>规模</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table></div></div>
+            <div class="panel group-panel"><div class="panel-head"><div><h3>文件分组</h3><div class="muted">按专业或项目组织</div></div></div><div id="groupList" class="group-list"></div><button class="btn group-create" data-act="createGroup">＋ 新建分组</button></div>
+            <div class="panel"><div class="panel-head"><div><h3>工程文档</h3><div class="muted">解析状态和索引规模实时更新</div></div></div><div class="library-wrap"><table class="library-table"><thead><tr><th>文档</th><th>分组</th><th>状态</th><th>规模</th><th>操作</th></tr></thead><tbody id="rows"></tbody></table></div></div>
             <div class="side-stack">
-              <div id="importSection" class="drop-zone"><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5M5 15v4h14v-4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>导入 PDF</h3><p>拖入文件，或从电脑中选择</p><input class="file-input" type="file" id="file" multiple accept=".pdf"><label class="file-label" for="file">选择文件</label><div id="fileMeta" class="file-meta">单个文件最大 300 MB</div><div class="btn-row"><button class="btn btn-primary" data-act="upload">上传并解析</button></div><div id="notice" class="notice" aria-live="polite"></div></div>
+              <div id="importSection" class="drop-zone"><div class="drop-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5M5 15v4h14v-4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>导入 PDF</h3><p>拖入文件，或从电脑中选择</p><input class="file-input" type="file" id="file" multiple accept=".pdf"><label class="file-label" for="file">选择文件</label><select id="importGroup" class="import-group" aria-label="导入到分组"></select><div id="fileMeta" class="file-meta">单个文件最大 300 MB</div><div class="btn-row"><button class="btn btn-primary" data-act="upload">上传并解析</button></div><div id="notice" class="notice" aria-live="polite"></div></div>
               <div class="engine-card"><div class="engine-card-head"><strong>解析引擎</strong><span class="engine-badge">MinerU</span></div><div id="databaseParserState" class="parser-state muted">正在检测解析引擎…</div><div class="settings-actions"><button class="btn" data-scroll="settingsSection">解析设置</button></div></div>
             </div>
           </div>
@@ -128,7 +136,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
   <div class="rbody"><div class="mdcol" id="mleft"></div><div class="pdfcol" id="vbox"></div></div>
 </div>
 <script>
-var DOCS=[], CUR=null, CURITEMS=[], CHAT_HISTORY=[], SETTINGS_LOADED=false, UPDATE_STATUS=null, HARNESS_STATUS=null, HARNESS_URL='', DESKTOP=window.specflowDesktop||null;
+var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', CUR=null, CURITEMS=[], CHAT_HISTORY=[], SETTINGS_LOADED=false, UPDATE_STATUS=null, HARNESS_STATUS=null, HARNESS_URL='', DESKTOP=window.specflowDesktop||null;
 try{ document.documentElement.setAttribute('data-theme',localStorage.getItem('kb-theme')||'dark'); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 function api(p,o){ return fetch('/api/'+p,o).then(async function(r){ var body=await r.json().catch(function(){return {};}); if(!r.ok) throw new Error((body.error&&body.error.message)||body.msg||r.status); return body; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -167,22 +175,41 @@ function hydrateSettings(settings){
 }
 async function load(){
   try{
-    var all=await Promise.all([api('settings'),api('documents'),api('health')]); var s=all[0],d=all[1],h=all[2];
+    var all=await Promise.all([api('settings'),api('documents'),api('health'),api('v1/groups')]); var s=all[0],d=all[1],h=all[2],g=all[3];
     hydrateSettings(s.settings);
-    showParserState(h); DOCS=d.docs;
+    showParserState(h); DOCS=d.docs; GROUPS=((g.data||g).items)||[];
+    if(ACTIVE_GROUP!=='all'&&ACTIVE_GROUP!==''&&!GROUPS.some(function(group){return group.id===ACTIVE_GROUP;})) ACTIVE_GROUP='all';
     document.getElementById('stats').textContent='队列 '+d.queue+' · 解析中 '+(d.running?'是':'否')+' · 已入库 '+DOCS.length;
-    var count=document.getElementById('dbCount'); if(count) count.textContent=DOCS.length+' 份文档 · 队列 '+d.queue+(d.running?' · 正在解析':'');
-    render();
+    renderGroups(); render(); hydrateGroupSelects();
     var sel=document.getElementById('qScenario');
     if(sel && !sel.options.length){ loadQaMeta(); loadLlmState(); }
     else { refreshScopeOptions(); }
   }catch(e){ document.getElementById('stats').textContent='服务异常：'+e.message; }
 }
+function groupName(id){ var group=GROUPS.find(function(item){return item.id===id;}); return group?group.name:'未分组'; }
+function groupOptions(selected,includeAll){
+  var html=includeAll?'<option value="all">全部文档</option>':'';
+  html+='<option value="">未分组</option>'+GROUPS.map(function(group){return '<option value="'+attr(group.id)+'"'+(group.id===selected?' selected':'')+'>'+esc(group.name)+'</option>';}).join('');
+  return html;
+}
+function hydrateGroupSelects(){
+  var importSelect=document.getElementById('importGroup'); if(importSelect){ var selected=importSelect.value; importSelect.innerHTML=groupOptions(selected,false); if(Array.from(importSelect.options).some(function(option){return option.value===selected;})) importSelect.value=selected; else importSelect.value=ACTIVE_GROUP==='all'?'':ACTIVE_GROUP; }
+}
+function renderGroups(){
+  var el=document.getElementById('groupList'); if(!el) return;
+  var ungrouped=DOCS.filter(function(document){return !document.groupId;}).length;
+  var fixed='<div class="group-item '+(ACTIVE_GROUP==='all'?'active':'')+'" role="button" tabindex="0" data-act="selectGroup" data-group="all"><span class="group-name">全部文档</span><span class="group-count">'+DOCS.length+'</span></div>'
+    +'<div class="group-item '+(ACTIVE_GROUP===''?'active':'')+'" role="button" tabindex="0" data-act="selectGroup" data-group=""><span class="group-name">未分组</span><span class="group-count">'+ungrouped+'</span></div>';
+  el.innerHTML=fixed+GROUPS.map(function(group){return '<div class="group-item user-group '+(ACTIVE_GROUP===group.id?'active':'')+'" role="button" tabindex="0" data-act="selectGroup" data-group="'+attr(group.id)+'"><span class="group-name">'+esc(group.name)+'</span><span class="group-count">'+Number(group.documentCount||0)+'</span><span class="group-actions"><button class="group-action" data-act="renameGroup" data-group="'+attr(group.id)+'" title="重命名">✎</button><button class="group-action" data-act="deleteGroup" data-group="'+attr(group.id)+'" title="删除">×</button></span></div>';}).join('');
+}
+function visibleDocuments(){ return ACTIVE_GROUP==='all'?DOCS:DOCS.filter(function(document){return String(document.groupId||'')===ACTIVE_GROUP;}); }
 function render(){
   var el=document.getElementById('rows');
   var search=document.getElementById('dbSearch'); var keyword=search?search.value.trim().toLowerCase():'';
-  var docs=keyword?DOCS.filter(function(d){return String(d.title||'').toLowerCase().indexOf(keyword)>=0;}):DOCS;
-  if(!docs.length){ el.innerHTML='<tr><td colspan="5" class="empty-state">'+(keyword?'没有匹配的文档。':'数据库为空。导入第一份工程 PDF 后，它会出现在这里。')+'</td></tr>'; return; }
+  var scoped=visibleDocuments(); var docs=keyword?scoped.filter(function(d){return String(d.title||'').toLowerCase().indexOf(keyword)>=0;}):scoped;
+  var label=document.getElementById('activeGroupLabel'); if(label) label.textContent=ACTIVE_GROUP==='all'?'全部文档':groupName(ACTIVE_GROUP);
+  var count=document.getElementById('dbCount'); if(count) count.textContent=docs.length+' / '+DOCS.length+' 份文档';
+  if(!docs.length){ el.innerHTML='<tr><td colspan="5" class="empty-state">'+(keyword?'当前分组没有匹配的文档。':'当前分组暂无文档。可在文档的分组菜单中归类，或直接导入。')+'</td></tr>'; return; }
   el.innerHTML=docs.map(function(d){
     var status=zh(d.status);
     if(d.status==='parsing'){ status+=' <span class="bar"><div style="width:'+(d.progress||0)+'%"></div></span> '+(d.progress||0)+'%';
@@ -193,10 +220,31 @@ function render(){
     var err=d.error?'<div class="muted bad">'+esc(d.error.slice(0,140))+'</div>':'';
     var size=(d.pages||0)+'页 / '+(d.images||0)+'图 / '+(d.chars||0)+'字';
     var sc=d.status==='ready'?'status-ready':(d.status==='error'?'status-error':((d.status==='parsing'||d.status==='queued')?'status-active':''));
-    return '<tr><td><div class="doc-cell"><span class="doc-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.5h7l4 4V20H7V3.5Z" stroke-width="1.5"/><path d="M14 4v4h4M9.5 12h6M9.5 15h5" stroke-width="1.5" stroke-linecap="round"/></svg></span><div><div class="doc-title">'+esc(d.title)+'</div>'+err+'</div></div></td><td><span class="type-label">'+esc(d.ext||'—')+'</span></td><td><span class="status-pill '+sc+'">'+status+'</span></td><td class="muted">'+size+'</td><td>'+
+    return '<tr><td><div class="doc-cell"><span class="doc-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3.5h7l4 4V20H7V3.5Z" stroke-width="1.5"/><path d="M14 4v4h4M9.5 12h6M9.5 15h5" stroke-width="1.5" stroke-linecap="round"/></svg></span><div><div class="doc-title">'+esc(d.title)+'</div>'+err+'</div></div></td><td><select class="doc-group-select" data-doc-group="'+attr(d.id)+'" aria-label="设置 '+attr(d.title)+' 的分组">'+groupOptions(d.groupId||'',false)+'</select></td><td><span class="status-pill '+sc+'">'+status+'</span></td><td class="muted">'+size+'</td><td>'+
       '<button class="btn" data-act="read" data-id="'+attr(d.id)+'" '+(d.status!=='ready'?'disabled':'')+'>阅读</button> '+
       '<button class="btn" data-act="reparse" data-id="'+attr(d.id)+'">重解析</button></td></tr>';
   }).join('');
+}
+async function selectGroup(id){ ACTIVE_GROUP=id==='all'?'all':String(id||''); renderGroups(); render(); var importSelect=document.getElementById('importGroup'); if(importSelect&&ACTIVE_GROUP!=='all') importSelect.value=ACTIVE_GROUP; }
+async function createGroup(){
+  var name=prompt('新建文件分组名称：',''); if(name===null||!name.trim()) return;
+  try{ var response=await api('v1/groups',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})}); ACTIVE_GROUP=(response.data||response).id; await load(); }
+  catch(e){ alert('创建分组失败：'+e.message); }
+}
+async function renameGroup(id){
+  var group=GROUPS.find(function(item){return item.id===id;}); if(!group) return;
+  var name=prompt('重命名文件分组：',group.name); if(name===null||!name.trim()||name.trim()===group.name) return;
+  try{ await api('v1/groups/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name.trim()})}); await load(); }
+  catch(e){ alert('重命名失败：'+e.message); }
+}
+async function deleteGroup(id){
+  var group=GROUPS.find(function(item){return item.id===id;}); if(!group||!confirm('删除分组“'+group.name+'”？\n分组内文档会移到“未分组”，文件不会被删除。')) return;
+  try{ await api('v1/groups/'+encodeURIComponent(id),{method:'DELETE'}); if(ACTIVE_GROUP===id) ACTIVE_GROUP=''; await load(); }
+  catch(e){ alert('删除分组失败：'+e.message); }
+}
+async function assignDocumentGroup(documentId,groupId){
+  try{ await api('v1/documents/'+encodeURIComponent(documentId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({groupId:groupId||''})}); await load(); }
+  catch(e){ alert('文档归组失败：'+e.message); await load(); }
 }
 async function upload(){
   var files=document.getElementById('file').files; var n=document.getElementById('notice');
@@ -204,7 +252,7 @@ async function upload(){
   try{ var health=await api('health'); if(!health.mineru||!health.mineru.available){ showParserState(health); n.textContent='无法解析：尚未安装或配置 MinerU。请先运行 setup-mineru.ps1。'; return; } }catch(e){ n.textContent='无法检测解析引擎：'+e.message; return; }
   for(var i=0;i<files.length;i++){
     var f=files[i]; n.textContent='上传中：'+f.name+' …';
-    try{ var r=await fetch('/api/import',{method:'POST',headers:{'X-File-Name':encodeURIComponent(f.name)},body:f}).then(function(x){return x.json();}); n.textContent+= r.ok?' ✓ 已加入解析队列':' ✗ '+(r.msg||''); }
+    try{ var r=await fetch('/api/import',{method:'POST',headers:{'X-File-Name':encodeURIComponent(f.name),'X-Group-Id':document.getElementById('importGroup').value||''},body:f}).then(function(x){return x.json();}); n.textContent+= r.ok?' ✓ 已加入解析队列':' ✗ '+(r.msg||''); }
     catch(e){ n.textContent+= ' ✗ 上传失败'; }
   }
   document.getElementById('file').value=''; load(); setTimeout(load,2000); setTimeout(load,4000);
@@ -315,8 +363,15 @@ async function loadQaMeta(){
 function refreshScopeOptions(){
   var sc=document.getElementById('qScope'); if(!sc) return;
   var selected=sc.value;
-  sc.innerHTML='<option value="">全部文档</option>'+DOCS.map(function(d){return '<option value="'+attr(d.id)+'">'+esc(d.title)+'</option>';}).join('');
+  sc.innerHTML='<option value="all">全部文档</option><optgroup label="文件分组"><option value="group:">未分组</option>'+GROUPS.map(function(group){return '<option value="group:'+attr(group.id)+'">'+esc(group.name)+'（'+Number(group.documentCount||0)+'）</option>';}).join('')+'</optgroup><optgroup label="单个文档">'+DOCS.map(function(d){return '<option value="doc:'+attr(d.id)+'">'+esc(d.title)+'</option>';}).join('')+'</optgroup>';
   if(Array.from(sc.options).some(function(x){return x.value===selected;})) sc.value=selected;
+  else sc.value='all';
+}
+function scopePayload(value){
+  var scope=String(value||'all');
+  if(scope.indexOf('group:')===0) return {groupId:scope.slice(6)};
+  if(scope.indexOf('doc:')===0) return {docIds:[scope.slice(4)]};
+  return {};
 }
 function citationAttrs(c){
   return ' data-act="cite" data-doc="'+attr(c.docId)+'" data-pg="'+Number(c.page||1)+'" data-ref="'+attr(c.ref||'')+'" data-item="'+attr(c.itemId||'')+'" data-bbox="'+attr((c.bbox||[]).join(','))+'" data-nbbox="'+attr((c.bboxNormalized||[]).join(','))+'"';
@@ -358,8 +413,41 @@ function appendAssistantTurn(){
   box.appendChild(turn); scrollConversation();
   return { root:turn, note:turn.querySelector('.chat-mode-note'), answer:turn.querySelector('.qa-answer'), cites:turn.querySelector('.qa-cites') };
 }
+function conversationTime(value){
+  var date=new Date(value||0); if(!Number.isFinite(date.getTime())) return '';
+  var today=new Date(); if(date.toDateString()===today.toDateString()) return date.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+  return date.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'});
+}
+function renderRecentConversations(){
+  var el=document.getElementById('recentConversations'); if(!el) return;
+  if(!CONVERSATIONS.length){ el.innerHTML='<div class="muted" style="padding:6px 10px">暂无对话</div>'; return; }
+  el.innerHTML=CONVERSATIONS.map(function(item){return '<div class="recent-item '+(CURRENT_CONVERSATION_ID===item.id?'active':'')+'" role="button" tabindex="0" data-act="openConversation" data-id="'+attr(item.id)+'"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.6"/></svg><span class="recent-copy"><span class="recent-title">'+esc(item.title||'历史对话')+'</span><span class="recent-meta">'+Number(item.turnCount||1)+' 轮 · '+esc(conversationTime(item.updatedAt||item.createdAt))+'</span></span><button class="recent-delete" data-act="deleteConversation" data-id="'+attr(item.id)+'" title="删除对话">×</button></div>';}).join('');
+}
+async function loadConversations(){
+  try{ var response=await api('v1/conversations?summary=1&limit=40'); CONVERSATIONS=((response.data||response).items)||[]; renderRecentConversations(); }
+  catch(e){ var el=document.getElementById('recentConversations'); if(el) el.innerHTML='<div class="muted bad" style="padding:6px 10px">读取失败</div>'; }
+}
+function assistantLabel(turn){ return turn.grounding==='general'?'通用模型回答':(turn.mode==='retrieval'?'资料检索结果':'资料库增强回答'); }
+async function openConversation(id){
+  try{
+    var response=await api('v1/conversations/'+encodeURIComponent(id)); var record=response.data||response; var turns=Array.isArray(record.turns)?record.turns:[];
+    CURRENT_CONVERSATION_ID=record.id; CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML='';
+    var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display=turns.length?'none':'block';
+    turns.forEach(function(item){ appendUserTurn(item.question||''); CHAT_HISTORY.push({role:'user',content:item.question||''}); var turn=appendAssistantTurn(); var text=item.answer||item.note||item.error||''; turn.note.textContent=assistantLabel(item); turn.answer.innerHTML=answerHtml(text,item.citations||[]); turn.cites.innerHTML=(item.citations||[]).map(citationCard).join(''); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); });
+    if(record.retrievalMode) document.getElementById('qMode').value=record.retrievalMode;
+    if(record.scenario) document.getElementById('qScenario').value=record.scenario;
+    var scope=record.groupId!==undefined&&record.groupId!==null?'group:'+record.groupId:(record.docIds&&record.docIds.length===1?'doc:'+record.docIds[0]:'all');
+    if(Array.from(document.getElementById('qScope').options).some(function(option){return option.value===scope;})) document.getElementById('qScope').value=scope;
+    syncQaMode(); renderRecentConversations(); showPage('assistant'); scrollConversation(); document.getElementById('q').focus();
+  }catch(e){ alert('打开对话失败：'+e.message); }
+}
+async function deleteConversation(id){
+  if(!confirm('删除这条对话记录？此操作不会删除引用的文档。')) return;
+  try{ await api('v1/conversations/'+encodeURIComponent(id),{method:'DELETE'}); if(CURRENT_CONVERSATION_ID===id) newChat(); await loadConversations(); }
+  catch(e){ alert('删除对话失败：'+e.message); }
+}
 function newChat(){
-  CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML=''; document.getElementById('qState').textContent='';
+  CURRENT_CONVERSATION_ID=''; CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML=''; document.getElementById('qState').textContent=''; renderRecentConversations();
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='block'; document.getElementById('q').focus();
 }
 function syncQaMode(){ var general=document.getElementById('qMode').value==='general'; var scope=document.getElementById('qScope'); if(scope){scope.disabled=general;scope.title=general?'通用对话不检索资料库':'检索范围';} }
@@ -375,14 +463,15 @@ async function askQuestion(){
   document.getElementById('qState').textContent=retrievalMode==='general'?'模型生成中…':'检索并生成中…';
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='none';
   try{
-    var r=await fetch('/api/v1/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,scenario:scenario,retrievalMode:retrievalMode,docIds:scope&&retrievalMode!=='general'?[scope]:null,history:history})});
+    var payload={question:q,scenario:scenario,retrievalMode:retrievalMode,conversationId:CURRENT_CONVERSATION_ID||undefined,history:history}; if(retrievalMode!=='general') Object.assign(payload,scopePayload(scope));
+    var r=await fetch('/api/v1/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var body=await r.json(); var d=body.data||body;
     var n=(d.citations||[]).length;
     var label=d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
     document.getElementById('qState').textContent=label+(n?' · 引用 '+n+' 条':'');
     var text=d.answer||d.note||d.error||'';
     turn.note.textContent=label; turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
-    if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation();
+    if(d.conversationId) CURRENT_CONVERSATION_ID=d.conversationId; if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
   }catch(e){ turn.note.textContent='请求失败'; turn.answer.textContent='失败：'+e.message; document.getElementById('qState').textContent='失败：'+e.message; }
 }
 function toggleTheme(){
@@ -561,6 +650,13 @@ document.addEventListener('click',function(e){
   else if(act==='refreshBalance'){ refreshBalance(); }
   else if(act==='chooseImport'){ showPage('database'); document.getElementById('file').click(); }
   else if(act==='newChat'){ newChat(); }
+  else if(act==='refreshConversations'){ loadConversations(); }
+  else if(act==='openConversation'){ openConversation(t.getAttribute('data-id')); }
+  else if(act==='deleteConversation'){ deleteConversation(t.getAttribute('data-id')); }
+  else if(act==='selectGroup'){ selectGroup(t.getAttribute('data-group')); }
+  else if(act==='createGroup'){ createGroup(); }
+  else if(act==='renameGroup'){ renameGroup(t.getAttribute('data-group')); }
+  else if(act==='deleteGroup'){ deleteGroup(t.getAttribute('data-group')); }
   else if(act==='openData'&&DESKTOP){ DESKTOP.app.openDataFolder(); }
   else if(act==='checkUpdate'){ runUpdateAction('check'); }
   else if(act==='downloadUpdate'){ runUpdateAction('download'); }
@@ -582,6 +678,7 @@ document.getElementById('q').addEventListener('keydown',function(e){ if(e.key===
 document.getElementById('q').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,180)+'px'; });
 document.getElementById('file').addEventListener('change',updateFileMeta);
 document.getElementById('dbSearch').addEventListener('input',render);
+document.addEventListener('change',function(e){ var select=e.target&&e.target.closest?e.target.closest('[data-doc-group]'):null; if(select) assignDocumentGroup(select.getAttribute('data-doc-group'),select.value); });
 document.getElementById('qMode').addEventListener('change',syncQaMode);
 document.getElementById('autoCheckUpdates').addEventListener('change',function(){ if(DESKTOP&&DESKTOP.updates) DESKTOP.updates.setAutoCheck(this.checked); });
 var drop=document.getElementById('importSection');
@@ -603,7 +700,7 @@ document.addEventListener('keydown',function(e){
 });
 try{ showPage(localStorage.getItem('specflow-page')||(DESKTOP?'agent':'assistant')); }catch(e){ showPage(DESKTOP?'agent':'assistant'); }
 syncQaMode();
-initDesktop(); load(); setInterval(load,2500);
+initDesktop(); load(); loadConversations(); setInterval(load,2500);
 </script>
 <script type="module">
 import * as pdfjs from '/lib/pdf.min.mjs';

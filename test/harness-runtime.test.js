@@ -15,6 +15,8 @@ test('installs a managed DSH skill that connects Harness to the local knowledge 
     assert.equal(result.installed, true);
     assert.match(content, /managed-by-specflow-engineering-studio/);
     assert.match(content, /\/api\/v1\/ask/);
+    assert.match(content, /\/api\/v1\/groups/);
+    assert.match(content, /conversationId/);
     assert.match(content, /sourceUrl/);
   } finally { fs.rmSync(home, { recursive: true, force: true }); }
 });

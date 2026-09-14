@@ -152,7 +152,7 @@ class RagIndex {
     const qTokens = [...new Set(tokenize(query))];
     if (!qTokens.length || !this.entries.length) return [];
     const N = this.entries.length; const k1 = 1.5; const b = 0.75;
-    const scoped = options.docIds && options.docIds.length ? new Set(options.docIds) : null;
+    const scoped = Array.isArray(options.docIds) ? new Set(options.docIds) : null;
     const scored = [];
     for (const e of this.entries) {
       if (scoped && !scoped.has(e.docId)) continue;
@@ -207,7 +207,7 @@ async function searchDetailed(index, query, options = {}, deps = {}) {
   const embeddings = deps.embeddings;
   if (!embeddings || !embeddings.isConfigured(llm)) return { hits: bm25.slice(0, topK), retrieval: meta };
   try {
-    const scoped = options.docIds && options.docIds.length ? new Set(options.docIds) : null;
+    const scoped = Array.isArray(options.docIds) ? new Set(options.docIds) : null;
     const rowsByDoc = new Map();
     for (const entry of index.entries) {
       if (scoped && !scoped.has(entry.docId)) continue;

@@ -69,6 +69,11 @@ test('配置 LLM 后：生成式回答并保留可定位引用', async () => {
   await stub.close();
 });
 
+test('显式空文档范围不会退化为搜索全部资料', () => {
+  const rag = new RagIndex({ library });
+  assert.deepEqual(rag.search('消防车道净宽度', { topK: 5, docIds: [] }), []);
+});
+
 test('连续条文碎片在检索层合并，且不会串入下一条', () => {
   const rag = new RagIndex({ library });
   const hits = rag.search('道路坡度协调', { topK: 1 });

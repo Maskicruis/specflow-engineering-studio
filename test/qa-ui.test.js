@@ -18,6 +18,11 @@ test('界面包含问答与引用跳转高亮的接线', () => {
   assert.match(ui, /class="answer-source-link"/, '文后来源包含真实超链接');
   assert.match(ui, /id="qMode"/, '可选择智能问答、仅资料库或通用对话');
   assert.match(ui, /id="chatMessages"/, '问答以多轮会话展示');
+  assert.match(ui, /id="recentConversations"/, '左侧包含最近对话');
+  assert.match(ui, /function openConversation/, '可恢复历史多轮对话');
+  assert.match(ui, /id="groupList"/, '数据库包含文件分组管理');
+  assert.match(ui, /data-doc-group/, '文档可调整所属分组');
+  assert.match(ui, /value="group:/, '问答范围可选择文件分组');
   assert.match(ui, /llmBase/, '有 LLM 配置输入');
   assert.match(ui, /id="qScenario"/, '有场景选择');
 });

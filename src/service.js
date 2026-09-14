@@ -17,6 +17,7 @@ const { isConfigured: llmConfigured } = require('./llm');
 const { SCENARIOS } = require('./scenarios');
 
 const DOCUMENTS_FILE = path.join(DATA, 'documents.json');
+const GROUPS_FILE = path.join(DATA, 'document-groups.json');
 const INBOX = ensureDir(path.join(DATA, 'inbox'));
 const WORK = ensureDir(path.join(DATA, 'work'));
 const LOGS = ensureDir(path.join(DATA, 'logs'));
@@ -26,8 +27,15 @@ class KnowledgeBaseService {
     this.settings = loadSettings();
     this.documents = readJson(DOCUMENTS_FILE, []);
     if (!Array.isArray(this.documents)) this.documents = [];
+    this.groups = readJson(GROUPS_FILE, []);
+    if (!Array.isArray(this.groups)) this.groups = [];
+    const groupIds = new Set(this.groups.map(group => group.id));
     let changed = false;
     for (const document of this.documents) {
+      if (!groupIds.has(document.groupId)) {
+        document.groupId = '';
+        changed = true;
+      }
       if (document.status === 'parsing') {
         document.status = 'error';
         document.progressText = '服务重启，需重试';
@@ -57,6 +65,10 @@ class KnowledgeBaseService {
     writeJson(DOCUMENTS_FILE, this.documents);
   }
 
+  persistGroups() {
+    writeJson(GROUPS_FILE, this.groups);
+  }
+
   publicDocument(document) {
     if (!document) return null;
     const copy = Object.assign({}, document);
@@ -65,8 +77,10 @@ class KnowledgeBaseService {
     return copy;
   }
 
-  list() {
-    return this.documents.map(document => this.publicDocument(document));
+  list(options = {}) {
+    const hasGroup = options && Object.prototype.hasOwnProperty.call(options, 'groupId');
+    const rows = hasGroup ? this.documents.filter(document => String(document.groupId || '') === String(options.groupId || '')) : this.documents;
+    return rows.map(document => this.publicDocument(document));
   }
 
   get(id) {
@@ -109,6 +123,7 @@ class KnowledgeBaseService {
       updatedAt: nowIso(),
       progress: 0,
       progressText: '排队中',
+      groupId: this.validGroupId(options.groupId),
       parserOptions: Object.assign({}, this.settings.parser, options.parser || {})
     };
   }
@@ -308,17 +323,147 @@ class KnowledgeBaseService {
     return this.rag.search(query, options);
   }
 
-  recordConversation(entry) {
-    const record = Object.assign({ id: 'c_' + crypto.randomUUID(), createdAt: nowIso() }, entry);
+  validGroupId(groupId) {
+    const id = String(groupId || '');
+    if (!id) return '';
+    if (!this.groups.some(group => group.id === id)) throw new Error('文档分组不存在');
+    return id;
+  }
+
+  listGroups() {
+    return this.groups.map(group => Object.assign({}, group, {
+      documentCount: this.documents.filter(document => document.groupId === group.id).length
+    }));
+  }
+
+  createGroup(name) {
+    const value = String(name || '').trim();
+    if (!value) throw new Error('分组名称不能为空');
+    if (value.length > 80) throw new Error('分组名称不能超过 80 个字符');
+    if (this.groups.some(group => group.name.toLowerCase() === value.toLowerCase())) throw new Error('分组名称已存在');
+    const group = { id: 'grp_' + crypto.randomUUID(), name: value, createdAt: nowIso(), updatedAt: nowIso() };
+    this.groups.push(group);
+    this.persistGroups();
+    return Object.assign({}, group, { documentCount: 0 });
+  }
+
+  updateGroup(id, patch = {}) {
+    const group = this.groups.find(item => item.id === id);
+    if (!group) throw new Error('文档分组不存在');
+    const value = String(patch.name || '').trim();
+    if (!value) throw new Error('分组名称不能为空');
+    if (value.length > 80) throw new Error('分组名称不能超过 80 个字符');
+    if (this.groups.some(item => item.id !== id && item.name.toLowerCase() === value.toLowerCase())) throw new Error('分组名称已存在');
+    group.name = value;
+    group.updatedAt = nowIso();
+    this.persistGroups();
+    return Object.assign({}, group, { documentCount: this.documents.filter(document => document.groupId === id).length });
+  }
+
+  deleteGroup(id) {
+    const index = this.groups.findIndex(item => item.id === id);
+    if (index < 0) throw new Error('文档分组不存在');
+    const [removed] = this.groups.splice(index, 1);
+    let ungrouped = 0;
+    for (const document of this.documents) {
+      if (document.groupId === id) { document.groupId = ''; document.updatedAt = nowIso(); ungrouped += 1; }
+    }
+    this.persistGroups();
+    if (ungrouped) this.persist();
+    return { id: removed.id, name: removed.name, ungroupedDocuments: ungrouped };
+  }
+
+  assignDocumentGroup(documentId, groupId) {
+    const document = this.get(documentId);
+    if (!document) throw new Error('文档不存在');
+    document.groupId = this.validGroupId(groupId);
+    document.updatedAt = nowIso();
+    this.persist();
+    return this.publicDocument(document);
+  }
+
+  resolveDocumentIds(payload = {}) {
+    if (Array.isArray(payload.docIds)) return payload.docIds.map(String);
+    if (Object.prototype.hasOwnProperty.call(payload, 'groupId')) {
+      const groupId = this.validGroupId(payload.groupId);
+      return this.documents.filter(document => String(document.groupId || '') === groupId).map(document => document.id);
+    }
+    return null;
+  }
+
+  normalizeConversation(record) {
+    if (!record) return null;
+    if (Array.isArray(record.turns)) return record;
+    const turn = {
+      id: 't_' + crypto.randomUUID(), createdAt: record.createdAt || nowIso(), question: record.question || '',
+      answer: record.answer || '', citations: record.citations || [], scenario: record.scenario || 'design',
+      mode: record.mode || '', retrieval: record.retrieval || null, retrievalMode: record.retrievalMode || 'auto',
+      grounding: record.grounding || '', durationMs: record.durationMs || 0
+    };
+    return Object.assign({}, record, {
+      title: record.title || String(record.question || '历史对话').replace(/\s+/g, ' ').slice(0, 42),
+      updatedAt: record.updatedAt || record.createdAt || nowIso(), turns: [turn]
+    });
+  }
+
+  recordConversation(entry, conversationId) {
+    const now = nowIso();
+    let index = conversationId ? this.conversations.findIndex(item => item.id === conversationId) : -1;
+    let record = index >= 0 ? this.normalizeConversation(this.conversations[index]) : null;
+    if (!record) {
+      record = {
+        id: 'c_' + crypto.randomUUID(),
+        title: String(entry.question || '新对话').replace(/\s+/g, ' ').trim().slice(0, 42) || '新对话',
+        createdAt: now,
+        turns: []
+      };
+    }
+    const turn = Object.assign({ id: 't_' + crypto.randomUUID(), createdAt: now }, entry);
+    record.turns.push(turn);
+    Object.assign(record, entry, { updatedAt: now });
+    if (index >= 0) this.conversations.splice(index, 1);
     this.conversations.unshift(record);
     if (this.conversations.length > 500) this.conversations.length = 500;
     writeJson(this.conversationsFile, this.conversations);
     return record.id;
   }
 
-  listConversations(limit = 50) { return this.conversations.slice(0, Math.max(1, Math.min(500, Number(limit) || 50))); }
+  listConversations(limit = 50) {
+    return this.conversations.slice(0, Math.max(1, Math.min(500, Number(limit) || 50))).map(item => this.normalizeConversation(item));
+  }
 
-  getConversation(id) { return this.conversations.find(item => item.id === id) || null; }
+  getConversation(id) { return this.normalizeConversation(this.conversations.find(item => item.id === id) || null); }
+
+  listConversationSummaries(limit = 50) {
+    return this.conversations.slice(0, Math.max(1, Math.min(500, Number(limit) || 50))).map(item => {
+      const record = this.normalizeConversation(item);
+      return {
+        id: record.id, title: record.title, createdAt: record.createdAt, updatedAt: record.updatedAt,
+        preview: String(record.answer || record.question || '').replace(/\s+/g, ' ').slice(0, 90),
+        turnCount: record.turns.length, scenario: record.scenario || 'design', retrievalMode: record.retrievalMode || 'auto',
+        groupId: record.groupId == null ? null : String(record.groupId), docIds: Array.isArray(record.docIds) ? record.docIds : []
+      };
+    });
+  }
+
+  deleteConversation(id) {
+    const index = this.conversations.findIndex(item => item.id === id);
+    if (index < 0) throw new Error('会话不存在');
+    this.conversations.splice(index, 1);
+    writeJson(this.conversationsFile, this.conversations);
+    return { id };
+  }
+
+  conversationHistory(id) {
+    const record = id ? this.getConversation(id) : null;
+    if (!record) return [];
+    return record.turns.flatMap(turn => {
+      const rows = [];
+      if (turn.question) rows.push({ role: 'user', content: turn.question });
+      if (turn.answer) rows.push({ role: 'assistant', content: turn.answer });
+      return rows;
+    });
+  }
 
   /** 标准化条目导出：命中块 → 结构化卡片，供设计流程/其它系统消费（联动预留） */
   exportItems(payload = {}) {
@@ -356,7 +501,8 @@ class KnowledgeBaseService {
       features: [
         'pdf-parse(mineru)', 'canonical-document', 'page-bbox-coordinates',
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
-        'citation-jump-highlight', 'inline-citation-links', 'conversation-history', 'multi-turn-chat', 'general-llm-fallback', 'item-export'
+        'citation-jump-highlight', 'inline-citation-links', 'conversation-history', 'multi-turn-chat',
+        'document-groups', 'group-scoped-retrieval', 'general-llm-fallback', 'item-export'
       ],
       retrieval: { default: 'bm25', hybrid: embeddings.isConfigured(this.settings.llm) ? 'available' : 'requires embeddingModel' },
       schemas: {
@@ -371,6 +517,9 @@ class KnowledgeBaseService {
         { method: 'POST', path: '/api/v1/ask', desc: '问答（结构化引用）' },
         { method: 'POST', path: '/api/v1/ask/stream', desc: '问答（SSE 流式）' },
         { method: 'GET', path: '/api/v1/conversations', desc: '会话历史' },
+        { method: 'GET/POST', path: '/api/v1/groups', desc: '文档分组列表与创建' },
+        { method: 'PATCH/DELETE', path: '/api/v1/groups/:id', desc: '重命名或删除文档分组' },
+        { method: 'PATCH', path: '/api/v1/documents/:id', desc: '设置文档所属分组' },
         { method: 'POST', path: '/api/v1/export/items', desc: '导出结构化条目卡片（联动预留）' },
         { method: 'GET', path: '/api/v1/documents/:id/content', desc: 'canonical 文档' },
         { method: 'GET', path: '/api/v1/documents/:id/source', desc: '原 PDF' }
@@ -386,9 +535,9 @@ class KnowledgeBaseService {
       question,
       scenarioId: payload.scenario,
       topK: payload.topK,
-      docIds: Array.isArray(payload.docIds) ? payload.docIds : null,
+      docIds: this.resolveDocumentIds(payload),
       retrievalMode: payload.retrievalMode,
-      history: Array.isArray(payload.history) ? payload.history : []
+      history: Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId)
     }, this.deps());
     const conversationId = this.recordConversation({
       question,
@@ -399,8 +548,10 @@ class KnowledgeBaseService {
       retrieval: result.retrieval || null,
       retrievalMode: result.retrievalMode || 'auto',
       grounding: result.grounding || '',
-      durationMs: Date.now() - started
-    });
+      durationMs: Date.now() - started,
+      groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null,
+      docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : []
+    }, payload.conversationId);
     return Object.assign({ conversationId, question }, result);
   }
 
@@ -414,9 +565,9 @@ class KnowledgeBaseService {
       question,
       scenarioId: payload.scenario,
       topK: payload.topK,
-      docIds: Array.isArray(payload.docIds) ? payload.docIds : null,
+      docIds: this.resolveDocumentIds(payload),
       retrievalMode: payload.retrievalMode,
-      history: Array.isArray(payload.history) ? payload.history : []
+      history: Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId)
     }, this.deps(), event => {
       if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; }
       if (event.type === 'delta') answer += event.text || '';
@@ -424,7 +575,7 @@ class KnowledgeBaseService {
       emit(event);
     });
     if (mode) {
-      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, retrievalMode, grounding, durationMs: Date.now() - started });
+      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
       emit({ type: 'saved', conversationId });
     }
   }

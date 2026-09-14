@@ -15,7 +15,7 @@
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | GET | `/api/v1/search?q=&topK=&doc=` | BM25 检索，返回带 `page/itemId/ref/bbox` 的命中 |
-| POST | `/api/v1/ask` | 问答：`{question, scenario, retrievalMode: auto\|knowledge\|general, history?, topK?, docIds?}` |
+| POST | `/api/v1/ask` | 问答：`{question, scenario, retrievalMode, conversationId?, history?, topK?, docIds?, groupId?}` |
 | POST | `/api/v1/ask/stream` | SSE 流式问答：事件 `citations` → `delta*` → `done` → `saved` |
 
 `/api/v1/ask` 响应（节选）：
@@ -50,6 +50,28 @@
 - `knowledge`：严格只依据资料库，无命中时不让模型用常识补齐；
 - `general`：不检索资料库，按通用大模型对话；
 - `history`：可传最近的 `{role:"user"|"assistant", content:"..."}` 数组，服务端会限长并带入当前轮。
+- `conversationId`：继续已有会话；未显式传 `history` 时，服务端会自动恢复该会话最近的多轮上下文；
+- `groupId`：只检索指定文档分组。传空字符串表示“未分组”；指定空分组会返回无命中，不会退化成全库搜索；
+- `docIds`：只检索指定文档；与 `groupId` 同时出现时以 `docIds` 为准。
+
+## 最近对话
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/conversations?summary=1&limit=40` | 最近对话摘要，适合侧边栏列表 |
+| GET | `/api/v1/conversations/:id` | 完整多轮内容、引用与检索范围 |
+| DELETE | `/api/v1/conversations/:id` | 删除对话记录，不影响文档 |
+
+## 文档分组
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/groups` | 分组、文档数量与未分组数量 |
+| POST | `/api/v1/groups` | 创建分组：`{name}` |
+| PATCH | `/api/v1/groups/:id` | 重命名分组：`{name}` |
+| DELETE | `/api/v1/groups/:id` | 删除分组；文档回到“未分组”，不删除文件 |
+| PATCH | `/api/v1/documents/:id` | 文档归组：`{groupId}`；空字符串表示未分组 |
+| GET | `/api/v1/documents?group=<id>` | 只列出指定分组文档 |
 
 ## 与设计流程 / 其它系统联动（预留）
 

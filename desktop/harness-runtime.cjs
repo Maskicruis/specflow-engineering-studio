@@ -116,8 +116,10 @@ The local API base is \`${baseUrl}\`.
 1. Discover capabilities with \`GET ${baseUrl}/api/v1/capabilities\`.
 2. Search with \`GET ${baseUrl}/api/v1/search?q=<encoded query>&topK=8\`.
 3. For a grounded answer, call \`POST ${baseUrl}/api/v1/ask\` with JSON \`{"question":"...","retrievalMode":"knowledge","scenario":"design"}\`.
-4. Preserve every returned citation number, document title, page, clause reference, \`sourceUrl\`, and \`locate\` object. Never invent citations.
-5. Use \`retrievalMode:"auto"\` only when the user permits general knowledge in addition to the database.
+4. When the user names a project or discipline group, list groups with \`GET ${baseUrl}/api/v1/groups\`, then pass its exact \`groupId\` to \`/api/v1/ask\`.
+5. Continue a prior knowledge conversation by passing its \`conversationId\`; the service restores recent history when explicit \`history\` is omitted.
+6. Preserve every returned citation number, document title, page, clause reference, \`sourceUrl\`, and \`locate\` object. Never invent citations.
+7. Use \`retrievalMode:"auto"\` only when the user permits general knowledge in addition to the database.
 
 The service listens only on the local computer. If it is unavailable, tell the user to open SpecFlow Engineering Studio.
 `;

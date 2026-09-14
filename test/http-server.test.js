@@ -48,3 +48,27 @@ test('does not grant CORS access to an arbitrary website by default', async t =>
   });
   assert.equal(response.headers.has('access-control-allow-origin'), false);
 });
+
+test('exposes document group management through the versioned API', async t => {
+  const groups = [];
+  const service = Object.assign(fakeService(), {
+    listGroups: () => groups,
+    createGroup: name => { const group = { id: 'grp_test', name, documentCount: 0 }; groups.push(group); return group; },
+    updateGroup: (id, body) => Object.assign(groups.find(group => group.id === id), body),
+    deleteGroup: id => ({ id, ungroupedDocuments: 0 }),
+    assignDocumentGroup: (id, groupId) => ({ id, groupId })
+  });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const createdResponse = await fetch(base + '/api/v1/groups', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: '消防设计' }) });
+  const created = await createdResponse.json();
+  assert.equal(createdResponse.status, 201);
+  assert.equal(created.data.id, 'grp_test');
+  const listed = await fetch(base + '/api/v1/groups').then(response => response.json());
+  assert.equal(listed.data.items[0].name, '消防设计');
+  const assigned = await fetch(base + '/api/v1/documents/doc_test', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId: 'grp_test' }) }).then(response => response.json());
+  assert.equal(assigned.data.document.groupId, 'grp_test');
+});

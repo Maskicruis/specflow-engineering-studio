@@ -83,7 +83,40 @@ test('配置 LLM 后问答：mode=llm 且写入会话历史', async () => {
   const list = service.listConversations();
   assert.ok(list.length >= 1 && list[0].citations.length >= 1, '会话已记录引用');
   assert.ok(list[0].retrieval && list[0].retrieval.mode, '会话记录检索元信息');
+  const continued = await service.ask({ question: '再说明转弯半径。', scenario: 'design', conversationId: result.conversationId });
+  assert.equal(continued.conversationId, result.conversationId, '追问写入同一个会话');
+  assert.equal(service.getConversation(result.conversationId).turns.length, 2, '会话包含两轮记录');
+  assert.ok(stub.state.lastBody.messages.some(message => message.role === 'user' && /消防车道净宽度/.test(message.content)), '只传 conversationId 也会恢复历史上下文');
   await stub.close();
+});
+
+test('文档分组可创建、归组、筛选、重命名和安全删除', () => {
+  const service = new KnowledgeBaseService();
+  const group = service.createGroup('消防设计');
+  assert.match(group.id, /^grp_/);
+  assert.throws(() => service.createGroup('消防设计'), /已存在/);
+  const document = service.assignDocumentGroup('doc_test', group.id);
+  assert.equal(document.groupId, group.id);
+  assert.deepEqual(service.resolveDocumentIds({ groupId: group.id }), ['doc_test']);
+  assert.equal(service.list({ groupId: group.id }).length, 1);
+  assert.equal(service.updateGroup(group.id, { name: '消防与疏散' }).name, '消防与疏散');
+  const removed = service.deleteGroup(group.id);
+  assert.equal(removed.ungroupedDocuments, 1);
+  assert.equal(service.get('doc_test').groupId, '');
+});
+
+test('会话记录按多轮聚合，并提供左侧列表摘要', () => {
+  const service = new KnowledgeBaseService();
+  const first = { question: '第一问', answer: '第一答', citations: [], scenario: 'design', mode: 'llm', retrievalMode: 'auto' };
+  const id = service.recordConversation(first);
+  const secondId = service.recordConversation({ question: '继续追问', answer: '继续回答', citations: [], scenario: 'design', mode: 'llm', retrievalMode: 'auto' }, id);
+  assert.equal(secondId, id);
+  assert.equal(service.getConversation(id).turns.length, 2);
+  const summary = service.listConversationSummaries().find(item => item.id === id);
+  assert.equal(summary.turnCount, 2);
+  assert.equal(summary.title, '第一问');
+  service.deleteConversation(id);
+  assert.equal(service.getConversation(id), null);
 });
 
 test('界面配置写入前校验服务端口与解析后端', () => {

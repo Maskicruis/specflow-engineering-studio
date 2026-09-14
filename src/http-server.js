@@ -47,8 +47,8 @@ function cors(request, response) {
   const allowed = configured === '*' || configured.split(',').map(value => value.trim()).includes(origin);
   if (!sameOrigin && !allowed) return;
   response.setHeader('Access-Control-Allow-Origin', configured === '*' ? '*' : origin);
-  response.setHeader('Access-Control-Allow-Headers', 'X-File-Name, Content-Type');
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS');
+  response.setHeader('Access-Control-Allow-Headers', 'X-File-Name, X-Group-Id, Content-Type');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   response.setHeader('Vary', 'Origin');
 }
 
@@ -211,7 +211,10 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
 
       // 会话历史
       if (pathname === '/api/v1/conversations' && request.method === 'GET') {
-        return success(response, { items: service.listConversations(url.searchParams.get('limit')) });
+        const items = url.searchParams.get('summary') === '1'
+          ? service.listConversationSummaries(url.searchParams.get('limit'))
+          : service.listConversations(url.searchParams.get('limit'));
+        return success(response, { items });
       }
       let conv = pathname.match(/^\/api\/v1\/conversations\/([^/]+)$/);
       if (conv && request.method === 'GET') {
@@ -219,6 +222,22 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         if (!item) throw new HttpError(404, '会话不存在', 'NOT_FOUND');
         return success(response, item);
       }
+      if (conv && request.method === 'DELETE') return success(response, service.deleteConversation(decodeURIComponent(conv[1])));
+
+      // 文档分类/分组管理
+      if (pathname === '/api/v1/groups' && request.method === 'GET') {
+        return success(response, {
+          items: service.listGroups(),
+          ungroupedCount: service.list({ groupId: '' }).length
+        });
+      }
+      if (pathname === '/api/v1/groups' && request.method === 'POST') {
+        const body = await readJsonBody(request);
+        return success(response, service.createGroup(body.name), 201);
+      }
+      let group = pathname.match(/^\/api\/v1\/groups\/([^/]+)$/);
+      if (group && request.method === 'PATCH') return success(response, service.updateGroup(decodeURIComponent(group[1]), await readJsonBody(request)));
+      if (group && request.method === 'DELETE') return success(response, service.deleteGroup(decodeURIComponent(group[1])));
 
       // 结构化条目导出（与设计流程/其它系统联动预留）
       if (pathname === '/api/v1/export/items' && request.method === 'POST') {
@@ -242,7 +261,8 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       if (pathname === '/api/v1/llm' && request.method === 'GET') return success(response, service.llmStatus());
 
       if ((pathname === '/api/v1/jobs' || pathname === '/api/v1/documents') && request.method === 'GET') {
-        return success(response, { items: service.list(), queue: service.queue.snapshot() });
+        const hasGroup = url.searchParams.has('group');
+        return success(response, { items: service.list(hasGroup ? { groupId: url.searchParams.get('group') } : {}), queue: service.queue.snapshot() });
       }
       if (pathname === '/api/v1/jobs' && request.method === 'POST') {
         const contentType = String(request.headers['content-type'] || '').toLowerCase();
@@ -250,11 +270,11 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         if (contentType.includes('application/json')) {
           const body = await readJsonBody(request);
           if (!body.sourcePath) throw new HttpError(400, '缺少 sourcePath', 'MISSING_SOURCE_PATH');
-          document = service.createFromPath(body.sourcePath, { title: body.title, parser: body.parser });
+          document = service.createFromPath(body.sourcePath, { title: body.title, parser: body.parser, groupId: body.groupId });
         } else {
           const filename = decodeFileName(request.headers['x-file-name']);
           if (!filename) throw new HttpError(400, '缺少 X-File-Name', 'MISSING_FILENAME');
-          document = service.createFromBuffer(filename, await readBody(request, MAX_UPLOAD_BYTES));
+          document = service.createFromBuffer(filename, await readBody(request, MAX_UPLOAD_BYTES), { groupId: request.headers['x-group-id'] || '' });
         }
         return success(response, { job: document }, 202);
       }
@@ -297,6 +317,11 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const item = service.updateItem(decodeURIComponent(match[1]), decodeURIComponent(match[2]), await readJsonBody(request));
         return success(response, { item });
       }
+      match = pathname.match(/^\/api\/v1\/documents\/([^/]+)$/);
+      if (match && request.method === 'PATCH') {
+        const body = await readJsonBody(request);
+        return success(response, { document: service.assignDocumentGroup(decodeURIComponent(match[1]), body.groupId) });
+      }
 
       // Compatibility routes used by the existing browser UI.
       if (pathname === '/api/health') return sendJson(response, 200, Object.assign({ ok: true }, service.health()));
@@ -305,7 +330,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       if (pathname === '/api/documents') return sendJson(response, 200, { ok: true, docs: service.list(), queue: service.queue.pending.length, running: service.queue.active.size > 0 });
       if (pathname === '/api/import' && request.method === 'POST') {
         const filename = decodeFileName(request.headers['x-file-name']);
-        const document = service.createFromBuffer(filename, await readBody(request, MAX_UPLOAD_BYTES));
+        const document = service.createFromBuffer(filename, await readBody(request, MAX_UPLOAD_BYTES), { groupId: request.headers['x-group-id'] || '' });
         return sendJson(response, 202, { ok: true, id: document.id });
       }
       if (pathname === '/api/reparse' && request.method === 'POST') {

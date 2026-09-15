@@ -19,8 +19,13 @@ test('界面包含问答与引用跳转高亮的接线', () => {
   assert.match(ui, /id="qMode"/, '可选择智能问答、仅资料库或通用对话');
   assert.match(ui, /id="chatMessages"/, '问答以多轮会话展示');
   assert.match(ui, /id="recentConversations"/, '左侧包含最近对话');
+  assert.match(ui, /class="sidebar-new-chat"[^>]*data-act="newChat"/, '左侧提供 Codex 式新对话入口');
   assert.match(ui, /function openConversation/, '可恢复历史多轮对话');
   assert.match(ui, /id="groupList"/, '数据库包含文件分组管理');
+  assert.match(ui, /id="groupEditorArea"/, '文件分组使用应用内编辑区');
+  assert.match(ui, /function saveGroup\(\)/, '文件分组可在应用内保存');
+  assert.match(ui, /data-act="saveGroup"/, '文件分组编辑器包含保存操作');
+  assert.doesNotMatch(ui.slice(ui.indexOf('function createGroup'), ui.indexOf('async function assignDocumentGroup')), /\bprompt\s*\(/, '分组管理不依赖 Electron 中不可靠的 prompt');
   assert.match(ui, /data-doc-group/, '文档可调整所属分组');
   assert.match(ui, /value="group:/, '问答范围可选择文件分组');
   assert.match(ui, /llmBase/, '有 LLM 配置输入');

@@ -54,4 +54,10 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /function clearLlmKey/);
   assert.match(html, /function renderUpdateStatus/);
   assert.match(html, /id="autoCheckUpdates"/);
+  assert.match(html, /class="settings-nav"/);
+  assert.match(html, /data-settings-pane="parser"/);
+  assert.match(html, /data-settings-pane="model"/);
+  assert.match(html, /data-settings-pane="agent"/);
+  assert.match(html, /data-settings-pane="updates"/);
+  assert.match(html, /function selectSettingsTab/);
 });

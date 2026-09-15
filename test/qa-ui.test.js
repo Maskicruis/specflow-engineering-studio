@@ -22,7 +22,8 @@ test('界面包含问答与引用跳转高亮的接线', () => {
   assert.match(ui, /class="sidebar-new-chat"[^>]*data-act="newChat"/, '左侧提供 Codex 式新对话入口');
   assert.match(ui, /function openConversation/, '可恢复历史多轮对话');
   assert.match(ui, /id="groupList"/, '数据库包含文件分组管理');
-  assert.match(ui, /id="groupEditorArea"/, '文件分组使用应用内编辑区');
+  assert.match(ui, /id="groupDialog"/, '文件分组使用明确的应用内对话框');
+  assert.match(ui, /id="groupNameInput"/, '分组对话框包含名称输入框');
   assert.match(ui, /function saveGroup\(\)/, '文件分组可在应用内保存');
   assert.match(ui, /data-act="saveGroup"/, '文件分组编辑器包含保存操作');
   assert.doesNotMatch(ui.slice(ui.indexOf('function createGroup'), ui.indexOf('async function assignDocumentGroup')), /\bprompt\s*\(/, '分组管理不依赖 Electron 中不可靠的 prompt');

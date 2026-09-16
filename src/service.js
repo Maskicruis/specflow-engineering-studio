@@ -513,7 +513,7 @@ class KnowledgeBaseService {
       },
       endpoints: [
         { method: 'GET', path: '/api/v1/capabilities', desc: '能力与 schema 清单（供外部系统发现）' },
-        { method: 'GET', path: '/api/v1/search?q=&topK=&doc=', desc: '本地检索（BM25）' },
+        { method: 'GET', path: '/api/v1/search?q=&topK=&doc=&group=', desc: '本地检索（BM25，可按文档或分组限定）' },
         { method: 'POST', path: '/api/v1/ask', desc: '问答（结构化引用）' },
         { method: 'POST', path: '/api/v1/ask/stream', desc: '问答（SSE 流式）' },
         { method: 'GET', path: '/api/v1/conversations', desc: '会话历史' },

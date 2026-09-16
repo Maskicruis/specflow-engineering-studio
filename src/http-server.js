@@ -250,7 +250,9 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         if (!q) throw new HttpError(400, '缺少 q', 'MISSING_QUERY');
         const topK = Number(url.searchParams.get('topK') || 8);
         const doc = url.searchParams.get('doc');
-        return success(response, { query: q, hits: service.search(q, { topK, docIds: doc ? [doc] : null }) });
+        const hasGroup = url.searchParams.has('group');
+        const docIds = doc ? [doc] : hasGroup ? service.resolveDocumentIds({ groupId: url.searchParams.get('group') }) : null;
+        return success(response, { query: q, groupId: hasGroup ? url.searchParams.get('group') : null, hits: service.search(q, { topK, docIds }) });
       }
       if (pathname === '/api/v1/ask' && request.method === 'POST') {
         const body = await readJsonBody(request);

@@ -1,0 +1,7 @@
+# Adds read-only SpecFlow knowledge tools to the DeepSeek Harness web profile.
+- insert:
+    - id: tool-specflow-knowledge
+      name: '@specflow/dsh-knowledge-tools'
+      config:
+        baseUrl: 'http://127.0.0.1:8790'
+        timeoutMs: 120000

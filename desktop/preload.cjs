@@ -15,20 +15,12 @@ contextBridge.exposeInMainWorld('specflowDesktop', {
   },
   dialog: {
     chooseDirectory: () => ipcRenderer.invoke('dialog:choose-directory'),
-    chooseMineru: () => ipcRenderer.invoke('dialog:choose-mineru'),
-    chooseHarnessWorkspace: () => ipcRenderer.invoke('harness:choose-workspace')
+    chooseMineru: () => ipcRenderer.invoke('dialog:choose-mineru')
   },
-  harness: {
-    status: () => ipcRenderer.invoke('harness:status'),
-    start: () => ipcRenderer.invoke('harness:start'),
-    restart: () => ipcRenderer.invoke('harness:restart'),
-    preferences: () => ipcRenderer.invoke('harness:preferences'),
-    setPreferences: patch => ipcRenderer.invoke('harness:set-preferences', patch),
-    registerProject: workspace => ipcRenderer.invoke('harness:register-project', workspace),
-    onStatus: callback => subscribe('harness:status', callback)
-  },
-  balance: {
-    get: () => ipcRenderer.invoke('balance:get')
+  connector: {
+    status: () => ipcRenderer.invoke('connector:status'),
+    install: () => ipcRenderer.invoke('connector:install'),
+    openProfile: () => ipcRenderer.invoke('connector:open-profile')
   },
   updates: {
     status: () => ipcRenderer.invoke('updates:status'),

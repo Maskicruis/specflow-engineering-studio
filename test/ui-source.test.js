@@ -35,10 +35,10 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /<textarea id="q"/);
   assert.match(html, /data-page="database"/);
   assert.match(html, /data-workspace-page="assistant"/);
-  assert.match(html, /data-workspace-page="agent"/);
-  assert.match(html, /DeepSeek Harness Agent/);
-  assert.match(html, /function renderHarnessStatus/);
-  assert.match(html, /function refreshBalance/);
+  assert.doesNotMatch(html, /data-workspace-page="agent"/);
+  assert.doesNotMatch(html, /id="harnessView"/);
+  assert.match(html, /function renderConnectorStatus/);
+  assert.match(html, /function installConnector/);
   assert.match(html, /data-workspace-page="database"/);
   assert.match(html, /id="dbSearch"/);
   assert.match(html, /class="drop-zone"/);
@@ -57,7 +57,7 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /class="settings-nav"/);
   assert.match(html, /data-settings-pane="parser"/);
   assert.match(html, /data-settings-pane="model"/);
-  assert.match(html, /data-settings-pane="agent"/);
+  assert.match(html, /data-settings-pane="integration"/);
   assert.match(html, /data-settings-pane="updates"/);
   assert.match(html, /function selectSettingsTab/);
 });

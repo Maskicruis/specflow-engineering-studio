@@ -6,7 +6,7 @@
 
 ## 首次启动必须完成的配置
 
-SpecFlow v0.5.0 已内置 DeepSeek Harness 和独立 Node.js 运行时，不要求系统预装 Node.js 或 DSH。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
+SpecFlow v0.7.0 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
 
 1. 安装并确认 MinerU 可在本机运行；
 2. 打开 SpecFlow 右上角“设置”；
@@ -20,13 +20,16 @@ SpecFlow v0.5.0 已内置 DeepSeek Harness 和独立 Node.js 运行时，不要�
 
 不配置 LLM 时，本地 BM25 检索、文档阅读和引用定位仍可使用。需要生成式回答时，在设置中填写 OpenAI 兼容的 Base URL、模型名和 API Key；也可以连接本地 Ollama/vLLM 兼容端点。
 
-## DeepSeek Harness Agent
+## 连接 DeepSeek Harness Studio（可选）
 
-首次打开“DeepSeek 智能体”时，程序会启动内置 DSH 服务。可在 SpecFlow 设置中修改 Harness 端口、默认项目目录和“随程序启动”。
+1. 先安装并启动一次 DeepSeek Harness Studio，使它创建当前用户的 `%USERPROFILE%\.dsh\profiles\web`；
+2. 打开 SpecFlow“设置 → Harness 连接”；
+3. 点击“安装 / 更新连接工具”；
+4. 完全退出并重新启动 DeepSeek Harness Studio。
 
-DeepSeek API Key 由官方 DSH 管理并保存在 `%USERPROFILE%\.dsh\.credentials.yaml`。配置完成后，SpecFlow 标题栏会显示 API 余额；点击余额可手动刷新。密钥不会传入网页渲染层。
+Harness 中会新增 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask`。日常使用优先由 Harness 调用 `specflow_search` 后自行组织答案；只有明确需要 SpecFlow 内部模型生成答案时才使用 `specflow_ask`。
 
-“打开项目”会把本地目录登记到 Harness 的项目记录中。SpecFlow 还会在 DSH Skills 目录安装受管理的 `specflow-knowledge-base` Skill，使 Agent 能访问本机 `/api/v1` 知识库接口。若同名 Skill 是用户自行创建的，程序会保留原文件而不覆盖。
+连接工具只访问 `127.0.0.1` / `localhost`。SpecFlow 会自动发布当前本机服务地址，因此自定义服务端口或默认端口被占用时不需要在 Harness 中重复配置。插件安装不会覆盖 Harness 的模型、会话或其他社区插件。
 
 ## 完整性校验
 

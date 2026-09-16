@@ -72,3 +72,20 @@ test('exposes document group management through the versioned API', async t => {
   const assigned = await fetch(base + '/api/v1/documents/doc_test', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ groupId: 'grp_test' }) }).then(response => response.json());
   assert.equal(assigned.data.document.groupId, 'grp_test');
 });
+
+test('limits external search to the requested document group', async t => {
+  let searchOptions;
+  const service = Object.assign(fakeService(), {
+    resolveDocumentIds: payload => payload.groupId === 'grp_fire' ? ['doc_fire_1', 'doc_fire_2'] : [],
+    search: (_query, options) => { searchOptions = options; return [{ docId: 'doc_fire_1', page: 5, text: '消防车道' }]; }
+  });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/v1/search?q=${encodeURIComponent('消防车道')}&group=grp_fire&topK=6`);
+  const body = await response.json();
+  assert.equal(response.status, 200);
+  assert.equal(body.data.groupId, 'grp_fire');
+  assert.deepEqual(searchOptions, { topK: 6, docIds: ['doc_fire_1', 'doc_fire_2'] });
+  assert.equal(body.data.hits[0].docId, 'doc_fire_1');
+});

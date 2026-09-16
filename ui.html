@@ -50,7 +50,13 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3.8h8l4 4V12M14 4v4h4M8 11h6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="15" rx="6" ry="2.4" stroke="white" stroke-width="1.5"/><path d="M6 15v3.4c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V15" stroke="white" stroke-width="1.5"/></svg></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Desktop</small></div></div>
   <div class="desktop-runtime"><span class="pulse"></span><span id="desktopRuntime">正在启动本地服务…</span></div>
-  <div class="title-actions"><button id="balanceButton" class="title-tool title-balance" data-act="refreshBalance" title="刷新 DeepSeek API 余额"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7.5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h10" stroke-width="1.6" stroke-linecap="round"/><path d="M15 12h5v3h-5a1.5 1.5 0 0 1 0-3Z" stroke-width="1.6"/></svg><span id="balanceLabel">余额 …</span></button><button class="title-tool" data-page="database" data-act="chooseImport" title="导入 PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5M5 15v4h14v-4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入</span></button><button id="updateTitleButton" class="title-tool title-update" data-scroll="settingsSection" title="软件更新"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="updateTitleLabel">更新</span></button><button class="title-tool" data-scroll="settingsSection" title="设置"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span>设置</span></button><button class="title-tool" data-act="theme" title="切换主题"><svg viewBox="0 0 24 24" fill="none"><path d="M20 15.2A8 8 0 1 1 8.8 4 6.6 6.6 0 0 0 20 15.2Z" stroke-width="1.7"/></svg></button><span class="title-divider"></span><button class="window-button" data-act="winMin" aria-label="最小化"><svg viewBox="0 0 24 24" fill="none"><path d="M7 12h10" stroke-width="1.6"/></svg></button><button class="window-button" data-act="winMax" aria-label="最大化"><svg viewBox="0 0 24 24" fill="none"><rect x="7" y="7" width="10" height="10" rx="1" stroke-width="1.5"/></svg></button><button class="window-button close" data-act="winClose" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none"><path d="m8 8 8 8m0-8-8 8" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>
+  <div class="title-actions">
+    <button id="modelTitleButton" class="title-tool title-balance" data-scroll="settingsSection" title="配置独立 LLM 模型"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5.5h10A2.5 2.5 0 0 1 19.5 8v8A2.5 2.5 0 0 1 17 18.5H7A2.5 2.5 0 0 1 4.5 16V8A2.5 2.5 0 0 1 7 5.5Z" stroke-width="1.6"/><path d="M8 10h8M8 14h5" stroke-width="1.6" stroke-linecap="round"/></svg><span id="modelTitleLabel">模型 …</span></button>
+    <button class="title-tool" data-page="database" data-act="chooseImport" title="导入 PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5M5 15v4h14v-4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入</span></button>
+    <button id="updateTitleButton" class="title-tool title-update" data-scroll="settingsSection" title="软件更新"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="updateTitleLabel">更新</span></button>
+    <button class="title-tool" data-scroll="settingsSection" title="设置"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span>设置</span></button>
+    <button class="title-tool" data-act="theme" title="切换主题"><svg viewBox="0 0 24 24" fill="none"><path d="M20 15.2A8 8 0 1 1 8.8 4 6.6 6.6 0 0 0 20 15.2Z" stroke-width="1.7"/></svg></button><span class="title-divider"></span><button class="window-button" data-act="winMin" aria-label="最小化"><svg viewBox="0 0 24 24" fill="none"><path d="M7 12h10" stroke-width="1.6"/></svg></button><button class="window-button" data-act="winMax" aria-label="最大化"><svg viewBox="0 0 24 24" fill="none"><rect x="7" y="7" width="10" height="10" rx="1" stroke-width="1.5"/></svg></button><button class="window-button close" data-act="winClose" aria-label="关闭"><svg viewBox="0 0 24 24" fill="none"><path d="m8 8 8 8m0-8-8 8" stroke-width="1.6" stroke-linecap="round"/></svg></button>
+  </div>
 </div>
 <div class="app-shell">
   <aside class="sidebar" aria-label="主导航">
@@ -61,26 +67,15 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
     <button class="sidebar-new-chat" data-act="newChat" title="创建新的知识库对话"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke-width="1.7" stroke-linecap="round"/></svg><span>新对话</span><kbd>Ctrl N</kbd></button>
     <nav class="nav">
       <div class="nav-label">工程工作区</div>
-      <button class="nav-item active" data-page="agent" aria-label="DeepSeek 智能体"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4.5h8M12 2v2.5M6.5 8h11A2.5 2.5 0 0 1 20 10.5v6a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-6A2.5 2.5 0 0 1 6.5 8Z" stroke-width="1.7"/><path d="M8 13h.01M16 13h.01M9 16h6" stroke-width="1.8" stroke-linecap="round"/></svg><span>DeepSeek 智能体</span><span class="nav-key">Ctrl 1</span></button>
-      <button class="nav-item" data-page="assistant" aria-label="知识库问答"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg><span>知识库问答</span><span class="nav-key">Ctrl 2</span></button>
-      <button class="nav-item" data-page="database" aria-label="文档数据库"><svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="3" stroke-width="1.7"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke-width="1.7"/></svg><span>文档数据库</span><span class="nav-key">Ctrl 3</span></button>
+      <button class="nav-item active" data-page="assistant" aria-label="工程助手"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg><span>工程助手</span><span class="nav-key">Ctrl 1</span></button>
+      <button class="nav-item" data-page="database" aria-label="文档数据库"><svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="3" stroke-width="1.7"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke-width="1.7"/></svg><span>文档数据库</span><span class="nav-key">Ctrl 2</span></button>
     </nav>
     <section class="recent-section" aria-label="最近对话"><div class="recent-head"><div class="nav-label">最近对话</div><button class="recent-refresh" data-act="refreshConversations" title="刷新最近对话">↻</button></div><div id="recentConversations" class="recent-list"><div class="muted" style="padding:6px 10px">正在读取…</div></div></section>
     <div class="side-status"><div class="side-status-top"><span class="pulse"></span>本地服务已连接</div><div id="stats" class="muted">正在读取资料库…</div></div>
   </aside>
   <main class="workspace">
     <div class="content">
-      <section id="agentSection" class="workspace-page harness-page active" data-workspace-page="agent">
-        <header class="page-bar">
-          <div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4.5h8M12 2v2.5M6.5 8h11A2.5 2.5 0 0 1 20 10.5v6a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-6A2.5 2.5 0 0 1 6.5 8Z" stroke-width="1.7"/><path d="M8 13h.01M16 13h.01M9 16h6" stroke-width="1.8" stroke-linecap="round"/></svg></span><span class="page-title-copy"><strong>DeepSeek Harness Agent</strong><small>项目、会话、终端与工程工具协作工作区</small></span></div>
-          <div class="page-actions"><span id="harnessStatus" class="chip harness-status-chip starting"><i class="chip-dot"></i><span>正在启动</span></span><button class="btn" data-act="chooseHarnessProject">打开项目</button><button class="btn" data-act="restartHarness">重启 Agent</button></div>
-        </header>
-        <div class="harness-stage">
-          <webview id="harnessView" class="harness-view" partition="persist:deepseek-harness" webpreferences="contextIsolation=yes,nodeIntegration=no,sandbox=yes"></webview>
-          <div id="harnessSplash" class="harness-splash"><div class="harness-splash-card"><div class="harness-logo">D</div><h2>DeepSeek Harness 正在准备</h2><p id="harnessSplashText">正在启动本地智能体服务。首次启动可能需要稍等片刻。</p><div class="settings-actions"><button class="btn btn-primary" data-act="startHarness">启动 Agent</button><button class="btn" data-scroll="settingsSection">打开设置</button></div></div></div>
-        </div>
-      </section>
-      <section id="askSection" class="workspace-page assistant-page" data-workspace-page="assistant">
+      <section id="askSection" class="workspace-page assistant-page active" data-workspace-page="assistant">
         <header class="page-bar">
           <div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="page-title-copy"><strong>工程助手</strong><small>基于数据库中的规范、图纸和技术资料回答</small></span></div>
           <div class="page-actions"><span class="chip"><i class="chip-dot"></i>RAG + 通用模型</span><button class="btn" data-act="newChat">新对话</button><button class="btn" data-page="database">打开文档数据库</button></div>
@@ -118,7 +113,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
             <div class="settings-nav-label">首选项</div>
             <button class="settings-tab active" data-act="settingsTab" data-settings-tab="parser"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>资料与解析</b><small>资料库、MinerU 与识别参数</small></span></button>
             <button class="settings-tab" data-act="settingsTab" data-settings-tab="model"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5.5h10A2.5 2.5 0 0 1 19.5 8v8A2.5 2.5 0 0 1 17 18.5H7A2.5 2.5 0 0 1 4.5 16V8A2.5 2.5 0 0 1 7 5.5Z" stroke-width="1.6"/><path d="M8 10h8M8 14h5" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>模型接口</b><small>对话模型、向量模型与密钥</small></span></button>
-            <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="agent"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4.5h8M12 2v2.5M6.5 8h11A2.5 2.5 0 0 1 20 10.5v6a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-6A2.5 2.5 0 0 1 6.5 8Z" stroke-width="1.7"/></svg><span class="settings-tab-copy"><b>Harness Agent</b><small>智能体端口、项目目录与启动</small></span></button>
+            <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="integration"><svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7a4 4 0 0 0 0 8h2M15 7h2a4 4 0 0 1 0 8h-2M8 11h8v2H8z" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>Harness 连接</b><small>向外部 DeepSeek Harness 提供知识工具</small></span></button>
             <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="updates"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="settings-tab-copy"><b>软件更新</b><small>版本、自动检查与安装</small></span></button>
           </nav>
           <div class="settings-content">
@@ -131,9 +126,9 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
               <header class="settings-pane-head"><h3>模型接口</h3><p>配置兼容 OpenAI 协议的对话与向量服务。</p></header>
               <div class="settings-section"><div class="settings-section-title">OpenAI 兼容接口</div><div class="llm-fields"><input id="llmBase" class="wide" placeholder="https://api.deepseek.com/v1"><input id="llmModel" placeholder="对话模型，如 deepseek-chat"><input id="llmEmbed" placeholder="向量模型（可选）"><input id="llmKey" class="wide" type="password" autocomplete="off" placeholder="API Key（留空保留已保存密钥）"><input id="llmTimeout" class="wide" type="number" min="5000" max="600000" step="1000" placeholder="请求超时，毫秒"></div><div class="settings-actions"><button class="btn btn-primary" data-act="saveLlm">保存模型设置</button><button class="btn" data-act="clearLlmKey">清除密钥</button></div><div id="llmState" class="field-help"></div></div>
             </section>
-            <section class="settings-pane desktop-only" data-settings-pane="agent">
-              <header class="settings-pane-head"><h3>DeepSeek Harness Agent</h3><p>管理官方 DSH 运行时、默认项目目录和启动行为。</p></header>
-              <div class="harness-settings"><div class="harness-settings-head"><div><strong>Agent 运行参数</strong><div class="field-help">项目与会话记录保存在本机</div></div><span class="engine-badge">DSH</span></div><div class="harness-fields"><input id="harnessPort" type="number" min="1024" max="65535" step="1" placeholder="端口"><label class="switch"><input id="harnessAutoStart" type="checkbox" checked><span>随程序启动</span></label><div class="harness-path-row"><input id="harnessWorkspace" placeholder="默认工程项目目录"><button class="btn" data-act="browseHarness">浏览</button></div></div><div class="settings-actions"><button class="btn btn-primary" data-act="saveHarness">保存 Agent 设置</button><button class="btn" data-act="restartHarness">重启 Agent</button><button class="btn" data-act="refreshBalance">刷新余额</button></div><div id="harnessSettingsState" class="field-help" aria-live="polite">正在读取 Harness 状态…</div></div>
+            <section class="settings-pane desktop-only" data-settings-pane="integration">
+              <header class="settings-pane-head"><h3>连接 DeepSeek Harness Studio</h3><p>本程序不再启动或嵌入 Harness；两套软件可以同时运行。</p></header>
+              <div class="harness-settings"><div class="harness-settings-head"><div><strong>SpecFlow 知识工具</strong><div class="field-help">为外部 Harness 注册检索、分组和资料库问答工具</div></div><span class="engine-badge">DSH Plugin</span></div><div class="settings-section" style="margin:12px 0 0"><div class="settings-section-title">安装后可调用</div><div class="field-help">specflow_status · specflow_list_groups · specflow_search · specflow_ask</div></div><div class="settings-actions"><button id="installConnectorButton" class="btn btn-primary" data-act="installConnector">安装 / 更新连接工具</button><button class="btn" data-act="refreshConnector">重新检测</button><button class="btn" data-act="openConnectorProfile">打开 Harness 插件目录</button></div><div id="connectorState" class="field-help" aria-live="polite">正在检测 DeepSeek Harness Studio…</div><div class="field-help restart-note">首次安装或更新后，请重启 DeepSeek Harness Studio。SpecFlow 只提供本机 API，不占用 Harness 端口。</div></div>
             </section>
             <section class="settings-pane desktop-only" data-settings-pane="updates">
               <header class="settings-pane-head"><h3>软件更新</h3><p>检查、下载并安全安装 GitHub Release。</p></header>
@@ -160,7 +155,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
   <div class="rbody"><div class="mdcol" id="mleft"></div><div class="pdfcol" id="vbox"></div></div>
 </div>
 <script>
-var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], SETTINGS_LOADED=false, UPDATE_STATUS=null, HARNESS_STATUS=null, HARNESS_URL='', DESKTOP=window.specflowDesktop||null;
+var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
 try{ document.documentElement.setAttribute('data-theme',localStorage.getItem('kb-theme')||'dark'); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 function api(p,o){ return fetch('/api/'+p,o).then(async function(r){ var body=await r.json().catch(function(){return {};}); if(!r.ok) throw new Error((body.error&&body.error.message)||body.msg||r.status); return body; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -380,6 +375,9 @@ async function loadLlmState(){
     var s=await api('v1/llm'); var d=s.data||s;
     var st=document.getElementById('llmState');
     if(st) st.textContent=(d.configured?'LLM 已配置：':'未配置 LLM（当前为检索模式）：')+(d.baseUrl||'—')+(d.model?(' · '+d.model):'')+(d.hasKey?' · 密钥已保存':' · 无密钥');
+    var modelButton=document.getElementById('modelTitleButton'), modelLabel=document.getElementById('modelTitleLabel');
+    if(modelLabel) modelLabel.textContent=d.configured?(d.model||'模型已配置'):'模型未配置';
+    if(modelButton){ modelButton.className='title-tool title-balance '+(d.configured?'ok':'bad'); modelButton.title=d.configured?('独立模型：'+(d.model||d.baseUrl||'已配置')):'点击配置独立 LLM 模型'; }
     if(d.baseUrl){ var b=document.getElementById('llmBase'); if(b&&!b.value) b.value=d.baseUrl; }
     if(d.model){ var m=document.getElementById('llmModel'); if(m&&!m.value) m.value=d.model; }
   }catch(e){}
@@ -532,18 +530,17 @@ function toggleTheme(){
   try{ localStorage.setItem('kb-theme',next); }catch(e){}
 }
 function showPage(name){
-  var page=name==='database'?'database':name==='agent'?'agent':'assistant';
+  var page=name==='database'?'database':'assistant';
   document.querySelectorAll('[data-workspace-page]').forEach(function(el){ el.classList.toggle('active',el.getAttribute('data-workspace-page')===page); });
   document.querySelectorAll('.nav-item[data-page]').forEach(function(el){ el.classList.toggle('active',el.getAttribute('data-page')===page); });
   try{ localStorage.setItem('specflow-page',page); }catch(e){}
-  if(page==='agent'&&DESKTOP&&DESKTOP.harness&&(!HARNESS_STATUS||HARNESS_STATUS.phase==='idle'||HARNESS_STATUS.phase==='error')) startHarness();
 }
 function closeSettings(){
   var panel=document.getElementById('settingsSection'); if(panel) panel.open=false;
   document.body.classList.remove('settings-open');
 }
 function selectSettingsTab(name){
-  var allowed=['parser','model','agent','updates']; var next=allowed.indexOf(name)>=0?name:'parser'; if(!DESKTOP&&(next==='agent'||next==='updates')) next='parser'; ACTIVE_SETTINGS_TAB=next;
+  var allowed=['parser','model','integration','updates']; var next=allowed.indexOf(name)>=0?name:'parser'; if(!DESKTOP&&(next==='integration'||next==='updates')) next='parser'; ACTIVE_SETTINGS_TAB=next;
   document.querySelectorAll('[data-settings-tab]').forEach(function(button){ button.classList.toggle('active',button.getAttribute('data-settings-tab')===next); });
   document.querySelectorAll('[data-settings-pane]').forEach(function(pane){ pane.classList.toggle('active',pane.getAttribute('data-settings-pane')===next); });
   try{ localStorage.setItem('specflow-settings-tab',next); }catch(e){}
@@ -558,62 +555,23 @@ async function chooseMineru(){
   var chosen=await DESKTOP.dialog.chooseMineru();
   if(chosen) document.getElementById('mineru').value=chosen;
 }
-function renderHarnessStatus(status){
-  if(!status) return; HARNESS_STATUS=status;
-  var phase=status.phase||'idle', chip=document.getElementById('harnessStatus'), splash=document.getElementById('harnessSplash'), textEl=document.getElementById('harnessSplashText'), settingsState=document.getElementById('harnessSettingsState');
-  var phaseLabel=phase==='running'?'Agent 已连接':phase==='starting'?'Agent 启动中':phase==='error'?'Agent 异常':'Agent 未启动';
-  if(chip){ chip.className='chip harness-status-chip '+phase; var label=chip.querySelector('span'); if(label) label.textContent=phaseLabel; chip.title=status.message||phaseLabel; }
-  if(textEl) textEl.textContent=status.message||phaseLabel;
-  if(settingsState){ settingsState.textContent=(status.message||phaseLabel)+(status.workspace?' · '+status.workspace:''); settingsState.className='field-help '+(phase==='error'?'bad':phase==='running'?'ok':''); }
-  var view=document.getElementById('harnessView');
-  if(phase==='running'&&status.url&&view){
-    HARNESS_URL=status.url;
-    if(view.getAttribute('src')!==status.url) view.setAttribute('src',status.url);
-  }else if(splash){ splash.classList.remove('hidden'); }
+function renderConnectorStatus(status){
+  if(!status) return; CONNECTOR_STATUS=status;
+  var state=document.getElementById('connectorState'), button=document.getElementById('installConnectorButton');
+  if(state){ state.textContent=status.message||'尚未检测'; state.className='field-help '+(status.installed?'ok':status.available?'':'bad'); }
+  if(button){ button.disabled=false; button.textContent=status.installed?'更新连接工具':'安装连接工具'; }
 }
-async function startHarness(){
-  if(!DESKTOP||!DESKTOP.harness){ renderHarnessStatus({phase:'error',message:'DeepSeek Harness 仅在桌面版中可用'}); return; }
-  try{ renderHarnessStatus({phase:'starting',message:'正在启动 DeepSeek Harness…'}); renderHarnessStatus(await DESKTOP.harness.start()); }
-  catch(e){ renderHarnessStatus({phase:'error',message:'Harness 启动失败：'+e.message}); }
+async function refreshConnector(){
+  if(!DESKTOP||!DESKTOP.connector) return;
+  try{ renderConnectorStatus(await DESKTOP.connector.status()); }
+  catch(e){ renderConnectorStatus({available:false,installed:false,message:'检测失败：'+e.message}); }
 }
-async function restartHarness(){
-  if(!DESKTOP||!DESKTOP.harness) return;
-  try{ renderHarnessStatus({phase:'starting',message:'正在重启 DeepSeek Harness…'}); renderHarnessStatus(await DESKTOP.harness.restart()); }
-  catch(e){ renderHarnessStatus({phase:'error',message:'Harness 重启失败：'+e.message}); }
-}
-async function loadHarnessPreferences(){
-  if(!DESKTOP||!DESKTOP.harness) return;
-  try{ var prefs=await DESKTOP.harness.preferences(); document.getElementById('harnessPort').value=prefs.port||3080; document.getElementById('harnessWorkspace').value=prefs.workspace||''; document.getElementById('harnessAutoStart').checked=prefs.autoStart!==false; }
-  catch(e){ var state=document.getElementById('harnessSettingsState'); if(state){state.textContent='读取 Harness 设置失败：'+e.message;state.className='field-help bad';} }
-}
-async function browseHarness(){
-  if(!DESKTOP) return ''; var chosen=await DESKTOP.dialog.chooseHarnessWorkspace(); if(chosen) document.getElementById('harnessWorkspace').value=chosen; return chosen;
-}
-async function chooseHarnessProject(){
-  if(!DESKTOP||!DESKTOP.harness) return;
-  try{
-    var chosen=await browseHarness(); if(!chosen) return;
-    var project=await DESKTOP.harness.registerProject(chosen); var view=document.getElementById('harnessView'); if(view&&view.getAttribute('src')) view.reload();
-    var state=document.getElementById('harnessSettingsState'); if(state){state.textContent='已加入项目记录：'+(project.path||chosen);state.className='field-help ok';}
-  }catch(e){ var state=document.getElementById('harnessSettingsState'); if(state){state.textContent='加入项目失败：'+e.message;state.className='field-help bad';} }
-}
-async function saveHarnessPreferences(){
-  if(!DESKTOP||!DESKTOP.harness) return;
-  var state=document.getElementById('harnessSettingsState');
-  try{
-    if(state){state.textContent='正在保存并应用…';state.className='field-help';}
-    var status=await DESKTOP.harness.setPreferences({port:Number(document.getElementById('harnessPort').value),workspace:document.getElementById('harnessWorkspace').value,autoStart:document.getElementById('harnessAutoStart').checked});
-    renderHarnessStatus(status); if(state){state.textContent='Agent 设置已保存 · '+(status.message||'已应用');state.className='field-help ok';}
-  }catch(e){ if(state){state.textContent='保存失败：'+e.message;state.className='field-help bad';} }
-}
-async function refreshBalance(){
-  var button=document.getElementById('balanceButton'), label=document.getElementById('balanceLabel'); if(!button||!label||!DESKTOP||!DESKTOP.balance) return;
-  button.className='title-tool title-balance loading'; label.textContent='余额 …';
-  try{
-    var result=await DESKTOP.balance.get();
-    if(result.ok){ var balances=result.balanceInfos||[], first=balances[0]||{}, total=first.total_balance==null?'—':first.total_balance, currency=first.currency||'CNY'; label.textContent='余额 '+total+' '+currency; button.className='title-tool title-balance '+(result.isAvailable?'ok':'bad'); button.title='DeepSeek API 余额：'+balances.map(function(x){return (x.total_balance==null?'—':x.total_balance)+' '+(x.currency||'');}).join(' / ')+' · 点击刷新'; }
-    else{ label.textContent=result.configured===false?'余额 未配置':'余额 查询失败'; button.className='title-tool title-balance bad'; button.title=(result.message||'查询失败')+' · 点击重试'; }
-  }catch(e){ label.textContent='余额 查询失败'; button.className='title-tool title-balance bad'; button.title=e.message||String(e); }
+async function installConnector(){
+  if(!DESKTOP||!DESKTOP.connector) return;
+  var state=document.getElementById('connectorState'), button=document.getElementById('installConnectorButton');
+  if(button){button.disabled=true;button.textContent='正在安装…';} if(state){state.textContent='正在写入 DeepSeek Harness web profile…';state.className='field-help';}
+  try{ renderConnectorStatus(await DESKTOP.connector.install()); }
+  catch(e){ renderConnectorStatus({available:true,installed:false,message:'安装失败：'+e.message}); }
 }
 function renderUpdateStatus(status){
   if(!status) return; UPDATE_STATUS=status;
@@ -652,11 +610,8 @@ function initDesktop(){
     DESKTOP.updates.preferences().then(function(prefs){ document.getElementById('autoCheckUpdates').checked=prefs.autoCheckUpdates!==false; }).catch(function(){});
     DESKTOP.updates.onStatus(renderUpdateStatus);
   }
-  if(DESKTOP.harness){
-    DESKTOP.harness.status().then(renderHarnessStatus).catch(function(e){renderHarnessStatus({phase:'error',message:e.message});});
-    DESKTOP.harness.onStatus(renderHarnessStatus); loadHarnessPreferences();
-  }
-  refreshBalance();
+  refreshConnector();
+  loadLlmState();
 }
 function updateFileMeta(){
   var f=document.getElementById('file'), meta=document.getElementById('fileMeta'); if(!f||!meta) return;
@@ -684,7 +639,7 @@ document.addEventListener('click',function(e){
   if(jump){
     var target=document.getElementById(jump.getAttribute('data-scroll'));
     if(target){
-      if(target.tagName==='DETAILS'){ var requested=jump.id==='updateTitleButton'?'updates':(jump.closest('.harness-splash')?'agent':(jump.closest('.engine-card')?'parser':ACTIVE_SETTINGS_TAB)); selectSettingsTab(requested); target.open=true; if(DESKTOP) document.body.classList.add('settings-open'); }
+      if(target.tagName==='DETAILS'){ var requested=jump.id==='updateTitleButton'?'updates':jump.id==='modelTitleButton'?'model':(jump.closest('.engine-card')?'parser':ACTIVE_SETTINGS_TAB); selectSettingsTab(requested); target.open=true; if(DESKTOP) document.body.classList.add('settings-open'); }
       if(!DESKTOP||target.tagName!=='DETAILS') target.scrollIntoView({behavior:'smooth',block:'start'});
     }
   }
@@ -700,12 +655,9 @@ document.addEventListener('click',function(e){
   else if(act==='clearLlmKey'){ clearLlmKey(); }
   else if(act==='chooseLibrary'){ chooseLibrary(); }
   else if(act==='chooseMineru'){ chooseMineru(); }
-  else if(act==='startHarness'){ startHarness(); }
-  else if(act==='restartHarness'){ restartHarness(); }
-  else if(act==='chooseHarnessProject'){ chooseHarnessProject(); }
-  else if(act==='browseHarness'){ browseHarness(); }
-  else if(act==='saveHarness'){ saveHarnessPreferences(); }
-  else if(act==='refreshBalance'){ refreshBalance(); }
+  else if(act==='installConnector'){ installConnector(); }
+  else if(act==='refreshConnector'){ refreshConnector(); }
+  else if(act==='openConnectorProfile'&&DESKTOP&&DESKTOP.connector){ DESKTOP.connector.openProfile(); }
   else if(act==='chooseImport'){ showPage('database'); document.getElementById('file').click(); }
   else if(act==='newChat'){ newChat(); }
   else if(act==='refreshConversations'){ loadConversations(); }
@@ -748,21 +700,14 @@ var drop=document.getElementById('importSection');
 ['dragleave','drop'].forEach(function(name){drop.addEventListener(name,function(e){e.preventDefault();drop.classList.remove('dragging');});});
 drop.addEventListener('drop',function(e){ if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){ try{document.getElementById('file').files=e.dataTransfer.files;}catch(_){} updateFileMeta(); } });
 document.getElementById('settingsSection').addEventListener('toggle',function(){ if(DESKTOP) document.body.classList.toggle('settings-open',this.open); });
-var harnessView=document.getElementById('harnessView');
-if(harnessView){
-  harnessView.addEventListener('did-start-loading',function(){ var splash=document.getElementById('harnessSplash'), textEl=document.getElementById('harnessSplashText'); if(splash)splash.classList.remove('hidden'); if(textEl)textEl.textContent='正在载入 DeepSeek Harness 工作区…'; });
-  harnessView.addEventListener('did-finish-load',function(){ var splash=document.getElementById('harnessSplash'); if(splash)splash.classList.add('hidden'); });
-  harnessView.addEventListener('did-fail-load',function(e){ if(Number(e.errorCode)===-3)return; var splash=document.getElementById('harnessSplash'), textEl=document.getElementById('harnessSplashText'); if(splash)splash.classList.remove('hidden'); if(textEl)textEl.textContent='Harness 页面载入失败：'+(e.errorDescription||e.errorCode||'未知错误'); });
-}
 document.addEventListener('keydown',function(e){
   if(e.target&&e.target.id==='groupNameInput'){ if(e.key==='Enter'){ e.preventDefault(); saveGroup(); return; } if(e.key==='Escape'){ e.preventDefault(); cancelGroup(); return; } }
   if(e.ctrlKey&&String(e.key).toLowerCase()==='n'){ e.preventDefault(); newChat(); return; }
-  if(e.ctrlKey&&e.key==='1'){ e.preventDefault(); showPage('agent'); return; }
-  if(e.ctrlKey&&e.key==='2'){ e.preventDefault(); showPage('assistant'); return; }
-  if(e.ctrlKey&&e.key==='3'){ e.preventDefault(); showPage('database'); return; }
+  if(e.ctrlKey&&e.key==='1'){ e.preventDefault(); showPage('assistant'); return; }
+  if(e.ctrlKey&&e.key==='2'){ e.preventDefault(); showPage('database'); return; }
   if(e.key!=='Escape') return; if(document.getElementById('groupDialog').style.display!=='none'){cancelGroup();return;} if(document.body.classList.contains('settings-open')){closeSettings();return;} if(document.getElementById('modal').style.display!=='none'){ document.getElementById('modal').style.display='none'; document.getElementById('vbox').innerHTML=''; }
 });
-try{ showPage(localStorage.getItem('specflow-page')||(DESKTOP?'agent':'assistant')); }catch(e){ showPage(DESKTOP?'agent':'assistant'); }
+try{ showPage(localStorage.getItem('specflow-page')||'assistant'); }catch(e){ showPage('assistant'); }
 try{ selectSettingsTab(localStorage.getItem('specflow-settings-tab')||'parser'); }catch(e){ selectSettingsTab('parser'); }
 syncQaMode();
 initDesktop(); load(); loadConversations(); setInterval(load,2500);

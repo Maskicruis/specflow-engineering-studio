@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { PACKAGE_NAME, connectorStatus, discoveryPath, installConnector, writeDiscovery } = require('../desktop/harness-connector.cjs');
+const { PACKAGE_NAME, SKILL_NAME, connectorStatus, discoveryPath, installConnector, writeDiscovery } = require('../desktop/harness-connector.cjs');
 
 function writeJson(file, value) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -25,10 +25,14 @@ test('detects an installed and enabled SpecFlow DSH plugin', () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'specflow-connector-status-'));
   try {
     writeJson(path.join(root, 'profiles', 'web', 'package.json'), { dependencies: { [PACKAGE_NAME]: 'file:test' }, dsh: { profile: { bundles: [PACKAGE_NAME] } } });
-    writeJson(path.join(root, 'profiles', 'web', 'node_modules', '@specflow', 'dsh-knowledge-tools', 'package.json'), { name: PACKAGE_NAME, version: '0.7.0' });
+    writeJson(path.join(root, 'profiles', 'web', 'node_modules', '@specflow', 'dsh-knowledge-tools', 'package.json'), { name: PACKAGE_NAME, version: '0.7.1' });
+    fs.mkdirSync(path.join(root, 'skills', SKILL_NAME), { recursive: true });
+    fs.writeFileSync(path.join(root, 'skills', SKILL_NAME, 'SKILL.md'), '---\nname: specflow-design-review\ndescription: Review engineering files.\nversion: 0.7.1\n---\n', 'utf8');
     const status = connectorStatus({ dshHome: root });
     assert.equal(status.installed, true);
-    assert.equal(status.version, '0.7.0');
+    assert.equal(status.version, '0.7.1');
+    assert.equal(status.skillInstalled, true);
+    assert.equal(status.skillVersion, '0.7.1');
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -43,7 +47,20 @@ test('installs the self-contained connector without launching a second Harness r
     assert.match(manifest.dependencies[PACKAGE_NAME], /^file:/);
     assert.ok(manifest.dsh.profile.bundles.includes(PACKAGE_NAME));
     assert.ok(fs.existsSync(path.join(root, 'profiles', 'web', 'node_modules', '@specflow', 'dsh-knowledge-tools', 'cordis.patch.yml')));
+    assert.ok(fs.existsSync(path.join(root, 'skills', SKILL_NAME, 'SKILL.md')));
+    assert.match(fs.readFileSync(path.join(root, 'skills', SKILL_NAME, 'SKILL.md'), 'utf8'), /specflow_search/);
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
+test('review skill is directly invokable and preserves the source document', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'packages', 'dsh-specflow-review-skill', 'SKILL.md'), 'utf8');
+  assert.match(source, /^---\nname: specflow-design-review\n/);
+  assert.match(source, /\/specflow-design-review/);
+  assert.match(source, /specflow_status/);
+  assert.match(source, /specflow_list_groups/);
+  assert.match(source, /specflow_search/);
+  assert.match(source, /Preserve the original file/);
+  assert.match(source, /需要人工复核/);
 });
 
 test('connector package registers grounded SpecFlow tools', () => {

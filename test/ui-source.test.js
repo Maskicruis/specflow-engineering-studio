@@ -39,6 +39,8 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.doesNotMatch(html, /id="harnessView"/);
   assert.match(html, /function renderConnectorStatus/);
   assert.match(html, /function installConnector/);
+  assert.match(html, /\/specflow-design-review/);
+  assert.match(html, /Plugin \+ Skill/);
   assert.match(html, /data-workspace-page="database"/);
   assert.match(html, /id="dbSearch"/);
   assert.match(html, /class="drop-zone"/);

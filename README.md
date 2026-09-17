@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-52%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-53%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -12,6 +12,7 @@
 
 ## 主要能力
 
+- **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
 - **外部 Harness 连接**：不再启动第二套 DSH 服务，也不再占用 Harness 端口；一键向 DeepSeek Harness Studio 安装 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask` 工具。
 - **自动服务发现**：SpecFlow 启动时向当前用户的 DSH 目录写入本机回环地址，Harness 工具可自动适配自定义端口或端口回退。
 - **独立模型运行**：无需打开 Harness。直接配置任意 OpenAI 兼容的 DeepSeek、Ollama、vLLM 或其他模型，即可使用智能问答、仅资料库和通用对话。
@@ -47,11 +48,11 @@
 
 1. 打开“设置 → 模型接口”，填写 OpenAI 兼容 Base URL、模型名和 API Key；如只使用本地检索，可以跳过。
 2. 在“资料与解析”中选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
-3. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新连接工具”，然后重启一次 DeepSeek Harness Studio。
+3. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新集成组件”，然后重启一次 DeepSeek Harness Studio。
 4. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
 5. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
 6. 左侧“最近对话”可恢复并继续既有问答，新对话按钮会创建一条独立记录。
-7. 在 DeepSeek Harness 对话中直接提出工程资料问题；Agent 会使用 `specflow_search`，也可先用 `specflow_list_groups` 限定专业或项目分组。
+7. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
 8. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，项目记录、对话、分组和资料库不会被删除。
 
 ## 独立运行与 Agent 接入
@@ -83,7 +84,7 @@ PATCH /api/v1/settings
 ## 数据与隐私
 
 - PDF、解析结果、索引、会话与设置默认保存在当前 Windows 用户的应用数据目录或用户指定的数据库目录；
-- Harness 的项目、会话与模型凭据仍完全由 DeepSeek Harness Studio 管理；SpecFlow 仅在 `%USERPROFILE%\.dsh\integrations` 写入本机服务发现记录，并在用户点击安装时增加一个本地工具插件；
+- Harness 的项目、会话与模型凭据仍完全由 DeepSeek Harness Studio 管理；SpecFlow 仅写入本机服务发现记录，并在用户点击安装时增加一个工具插件和一个本地审查 Skill；
 - 更新和覆盖安装不会主动删除资料库；
 - 智能/资料库模式会把检索命中的片段发给已配置的 LLM；通用对话只发送对话内容。若使用本地兼容模型，可保持资料不外发；
 - API Key 不写入仓库，也不会进入 Release 产物。
@@ -97,6 +98,6 @@ npm run desktop
 npm run build:desktop
 ```
 
-`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。v0.7.0 自动化验证为 **52/52 通过**，覆盖外部 Harness 工具安装与发现、无内置 Harness 运行时、独立 LLM、分组检索、Codex 式最近对话、文件分组、更新校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、引用定位和标准接口。
+`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。自动化验证覆盖 Harness 工具与审查 Skill 安装、无内置 Harness 运行时、独立 LLM、分组检索、Codex 式最近对话、文件分组、更新校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、引用定位和标准接口。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.7.0 发布说明](docs/RELEASE_NOTES_0.7.0_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.7.1 发布说明](docs/RELEASE_NOTES_0.7.1_CN.md)

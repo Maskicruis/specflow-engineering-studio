@@ -113,7 +113,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
             <div class="settings-nav-label">首选项</div>
             <button class="settings-tab active" data-act="settingsTab" data-settings-tab="parser"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>资料与解析</b><small>资料库、MinerU 与识别参数</small></span></button>
             <button class="settings-tab" data-act="settingsTab" data-settings-tab="model"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5.5h10A2.5 2.5 0 0 1 19.5 8v8A2.5 2.5 0 0 1 17 18.5H7A2.5 2.5 0 0 1 4.5 16V8A2.5 2.5 0 0 1 7 5.5Z" stroke-width="1.6"/><path d="M8 10h8M8 14h5" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>模型接口</b><small>对话模型、向量模型与密钥</small></span></button>
-            <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="integration"><svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7a4 4 0 0 0 0 8h2M15 7h2a4 4 0 0 1 0 8h-2M8 11h8v2H8z" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>Harness 连接</b><small>向外部 DeepSeek Harness 提供知识工具</small></span></button>
+            <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="integration"><svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7a4 4 0 0 0 0 8h2M15 7h2a4 4 0 0 1 0 8h-2M8 11h8v2H8z" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>Harness 连接</b><small>知识工具与一键规范审查工作流</small></span></button>
             <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="updates"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="settings-tab-copy"><b>软件更新</b><small>版本、自动检查与安装</small></span></button>
           </nav>
           <div class="settings-content">
@@ -127,8 +127,8 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
               <div class="settings-section"><div class="settings-section-title">OpenAI 兼容接口</div><div class="llm-fields"><input id="llmBase" class="wide" placeholder="https://api.deepseek.com/v1"><input id="llmModel" placeholder="对话模型，如 deepseek-chat"><input id="llmEmbed" placeholder="向量模型（可选）"><input id="llmKey" class="wide" type="password" autocomplete="off" placeholder="API Key（留空保留已保存密钥）"><input id="llmTimeout" class="wide" type="number" min="5000" max="600000" step="1000" placeholder="请求超时，毫秒"></div><div class="settings-actions"><button class="btn btn-primary" data-act="saveLlm">保存模型设置</button><button class="btn" data-act="clearLlmKey">清除密钥</button></div><div id="llmState" class="field-help"></div></div>
             </section>
             <section class="settings-pane desktop-only" data-settings-pane="integration">
-              <header class="settings-pane-head"><h3>连接 DeepSeek Harness Studio</h3><p>本程序不再启动或嵌入 Harness；两套软件可以同时运行。</p></header>
-              <div class="harness-settings"><div class="harness-settings-head"><div><strong>SpecFlow 知识工具</strong><div class="field-help">为外部 Harness 注册检索、分组和资料库问答工具</div></div><span class="engine-badge">DSH Plugin</span></div><div class="settings-section" style="margin:12px 0 0"><div class="settings-section-title">安装后可调用</div><div class="field-help">specflow_status · specflow_list_groups · specflow_search · specflow_ask</div></div><div class="settings-actions"><button id="installConnectorButton" class="btn btn-primary" data-act="installConnector">安装 / 更新连接工具</button><button class="btn" data-act="refreshConnector">重新检测</button><button class="btn" data-act="openConnectorProfile">打开 Harness 插件目录</button></div><div id="connectorState" class="field-help" aria-live="polite">正在检测 DeepSeek Harness Studio…</div><div class="field-help restart-note">首次安装或更新后，请重启 DeepSeek Harness Studio。SpecFlow 只提供本机 API，不占用 Harness 端口。</div></div>
+              <header class="settings-pane-head"><h3>连接 DeepSeek Harness Studio</h3><p>安装知识工具和一键审查 Skill；不启动、不嵌入也不修改 Harness Studio 源码。</p></header>
+              <div class="harness-settings"><div class="harness-settings-head"><div><strong>SpecFlow Agent 集成</strong><div class="field-help">为外部 Harness 同时安装知识工具与工程规范审查工作流</div></div><span class="engine-badge">Plugin + Skill</span></div><div class="settings-section" style="margin:12px 0 0"><div class="settings-section-title">一键审查</div><div class="field-help"><code>/specflow-design-review C:\项目\初步设计.docx</code></div><div class="field-help">自动检查服务、选择规范分组、逐项检索、生成审查矩阵与修订建议；原文件不会被覆盖。</div></div><div class="settings-section" style="margin:12px 0 0"><div class="settings-section-title">底层知识工具</div><div class="field-help">specflow_status · specflow_list_groups · specflow_search · specflow_ask</div></div><div class="settings-actions"><button id="installConnectorButton" class="btn btn-primary" data-act="installConnector">安装 / 更新集成组件</button><button class="btn" data-act="refreshConnector">重新检测</button><button class="btn" data-act="openConnectorProfile">打开 Harness 配置目录</button></div><div id="connectorState" class="field-help" aria-live="polite">正在检测 DeepSeek Harness Studio…</div><div class="field-help restart-note">首次安装或更新工具插件后，请重启一次 Harness。Skill 位于当前用户的 .dsh\skills，不会覆盖模型、会话或工程。</div></div>
             </section>
             <section class="settings-pane desktop-only" data-settings-pane="updates">
               <header class="settings-pane-head"><h3>软件更新</h3><p>检查、下载并安全安装 GitHub Release。</p></header>
@@ -559,7 +559,7 @@ function renderConnectorStatus(status){
   if(!status) return; CONNECTOR_STATUS=status;
   var state=document.getElementById('connectorState'), button=document.getElementById('installConnectorButton');
   if(state){ state.textContent=status.message||'尚未检测'; state.className='field-help '+(status.installed?'ok':status.available?'':'bad'); }
-  if(button){ button.disabled=false; button.textContent=status.installed?'更新连接工具':'安装连接工具'; }
+  if(button){ button.disabled=false; button.textContent=status.installed?'更新集成组件':'安装集成组件'; }
 }
 async function refreshConnector(){
   if(!DESKTOP||!DESKTOP.connector) return;
@@ -569,7 +569,7 @@ async function refreshConnector(){
 async function installConnector(){
   if(!DESKTOP||!DESKTOP.connector) return;
   var state=document.getElementById('connectorState'), button=document.getElementById('installConnectorButton');
-  if(button){button.disabled=true;button.textContent='正在安装…';} if(state){state.textContent='正在写入 DeepSeek Harness web profile…';state.className='field-help';}
+  if(button){button.disabled=true;button.textContent='正在安装…';} if(state){state.textContent='正在安装 Harness 知识工具与规范审查 Skill…';state.className='field-help';}
   try{ renderConnectorStatus(await DESKTOP.connector.install()); }
   catch(e){ renderConnectorStatus({available:true,installed:false,message:'安装失败：'+e.message}); }
 }

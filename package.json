@@ -1,8 +1,8 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
-  "description": "工程文档智能工作台：独立 LLM + MinerU 文档数据库 + DeepSeek Harness 连接工具 + RAG 原文定位与高亮",
+  "description": "工程文档智能工作台：独立 LLM + MinerU 文档数据库 + DeepSeek Harness 规范审查工作流 + RAG 原文定位与高亮",
   "type": "commonjs",
   "main": "index.js",
   "bin": {
@@ -45,6 +45,7 @@
       "lib/**/*",
       "schemas/**/*",
       "packages/dsh-specflow-knowledge/**/*",
+      "packages/dsh-specflow-review-skill/**/*",
       "ui.html",
       "server.js",
       "cli.js",

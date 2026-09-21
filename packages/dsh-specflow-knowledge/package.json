@@ -1,6 +1,6 @@
 {
   "name": "@specflow/dsh-knowledge-tools",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "DeepSeek Harness tools for the local SpecFlow engineering knowledge base.",
   "type": "module",
   "main": "lib/index.js",

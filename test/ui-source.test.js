@@ -7,6 +7,7 @@ const test = require('node:test');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'ui.html'), 'utf8');
+const workspaceScript = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'workspace.js'), 'utf8');
 
 test('embedded browser scripts are syntactically valid', () => {
   const scripts = [...html.matchAll(/<script(?:\s+type="module")?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
@@ -62,4 +63,18 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /data-settings-pane="integration"/);
   assert.match(html, /data-settings-pane="updates"/);
   assert.match(html, /function selectSettingsTab/);
+});
+
+test('engineering workspace and road drainage designer are wired into the shell', () => {
+  new vm.Script(workspaceScript);
+  assert.match(html, /设计助手/);
+  assert.match(html, /设计工具/);
+  assert.match(html, /id="projectName"/);
+  assert.match(html, /id="checklistList"/);
+  assert.match(html, /id="slopeCanvas"/);
+  assert.match(html, /id="slopeDecimals"/);
+  assert.match(workspaceScript, /function createEngineeringProject/);
+  assert.match(workspaceScript, /function autoSlope/);
+  assert.match(workspaceScript, /ctrlKey&&event\.altKey/);
+  assert.match(workspaceScript, /DESKTOP\.balance\.get/);
 });

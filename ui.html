@@ -46,12 +46,13 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 @media(max-width:1120px){.database-grid{grid-template-columns:165px minmax(0,1fr) 250px}.library-table td,.library-table th{padding:10px}}
 @media(max-width:960px){.sidebar-new-chat{width:40px;justify-content:center;padding:0}.sidebar-new-chat span,.sidebar-new-chat kbd,.recent-section{display:none}.database-grid{grid-template-columns:150px minmax(0,1fr)}.database-grid .side-stack{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.doc-cell{min-width:170px}}
 @media(max-width:760px){.database-grid{grid-template-columns:1fr}.group-panel{min-height:220px}.database-grid .side-stack{grid-column:auto;display:flex}.recent-section{display:none}.desktop-app .settings-card[open]{top:50px;right:8px;bottom:8px;width:calc(100vw - 16px)}.settings-body{grid-template-columns:1fr}.settings-nav{border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px}.settings-nav-label{display:none}.settings-tab{padding:7px}.settings-tab-copy small{display:none}.settings-content{padding:15px}.settings-footer{align-items:flex-start;flex-direction:column}.app-dialog{padding:14px}}
-</style></head><body>
+</style><link rel="stylesheet" href="/app/workspace.css"></head><body>
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3.8h8l4 4V12M14 4v4h4M8 11h6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="15" rx="6" ry="2.4" stroke="white" stroke-width="1.5"/><path d="M6 15v3.4c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V15" stroke="white" stroke-width="1.5"/></svg></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Desktop</small></div></div>
   <div class="desktop-runtime"><span class="pulse"></span><span id="desktopRuntime">正在启动本地服务…</span></div>
   <div class="title-actions">
     <button id="modelTitleButton" class="title-tool title-balance" data-scroll="settingsSection" title="配置独立 LLM 模型"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5.5h10A2.5 2.5 0 0 1 19.5 8v8A2.5 2.5 0 0 1 17 18.5H7A2.5 2.5 0 0 1 4.5 16V8A2.5 2.5 0 0 1 7 5.5Z" stroke-width="1.6"/><path d="M8 10h8M8 14h5" stroke-width="1.6" stroke-linecap="round"/></svg><span id="modelTitleLabel">模型 …</span></button>
+    <button id="balanceTitleButton" class="title-tool title-balance" data-studio-act="refreshBalance" title="DeepSeek API 余额"><svg viewBox="0 0 24 24" fill="none"><path d="M4.5 7.5h15v10h-15zM16 10.5h4v4h-4a2 2 0 0 1 0-4Z" stroke-width="1.6" stroke-linejoin="round"/><path d="M7 7.5V6a2 2 0 0 1 2-2h7" stroke-width="1.6" stroke-linecap="round"/></svg><span id="balanceTitleLabel">余额 …</span></button>
     <button class="title-tool" data-page="database" data-act="chooseImport" title="导入 PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M12 15V5m0 0L8.5 8.5M12 5l3.5 3.5M5 15v4h14v-4" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg><span>导入</span></button>
     <button id="updateTitleButton" class="title-tool title-update" data-scroll="settingsSection" title="软件更新"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="updateTitleLabel">更新</span></button>
     <button class="title-tool" data-scroll="settingsSection" title="设置"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span>设置</span></button>
@@ -66,18 +67,29 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
     </div>
     <button class="sidebar-new-chat" data-act="newChat" title="创建新的知识库对话"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke-width="1.7" stroke-linecap="round"/></svg><span>新对话</span><kbd>Ctrl N</kbd></button>
     <nav class="nav">
-      <div class="nav-label">工程工作区</div>
-      <button class="nav-item active" data-page="assistant" aria-label="工程助手"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg><span>工程助手</span><span class="nav-key">Ctrl 1</span></button>
-      <button class="nav-item" data-page="database" aria-label="文档数据库"><svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="3" stroke-width="1.7"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke-width="1.7"/></svg><span>文档数据库</span><span class="nav-key">Ctrl 2</span></button>
+      <div class="nav-label">工程助手</div>
+      <button class="nav-item active" data-page="design" aria-label="设计助手"><svg viewBox="0 0 24 24" fill="none"><path d="M4 18.5 15.5 7l2 2L6 20H4v-1.5ZM13.5 9l2 2M5 5h6M5 9h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>设计助手</span><span class="nav-key">Ctrl 1</span></button>
+      <button class="nav-item" data-page="assistant" aria-label="知识库问答"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg><span>知识库问答</span><span class="nav-key">Ctrl 2</span></button>
+      <button class="nav-item" data-page="database" aria-label="文档数据库"><svg viewBox="0 0 24 24" fill="none"><ellipse cx="12" cy="6" rx="7" ry="3" stroke-width="1.7"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" stroke-width="1.7"/></svg><span>文档数据库</span><span class="nav-key">Ctrl 3</span></button>
+      <div class="nav-divider"></div><div class="nav-label">设计工具</div>
+      <button class="nav-item" data-page="tools" aria-label="设计工具"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4v4M4 8h4M16 16v4M16 16h4M13 5l6 6-8 8-6-6 8-8Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>工具工作台</span><span class="nav-key">Ctrl 4</span></button>
     </nav>
     <section class="recent-section" aria-label="最近对话"><div class="recent-head"><div class="nav-label">最近对话</div><button class="recent-refresh" data-act="refreshConversations" title="刷新最近对话">↻</button></div><div id="recentConversations" class="recent-list"><div class="muted" style="padding:6px 10px">正在读取…</div></div></section>
     <div class="side-status"><div class="side-status-top"><span class="pulse"></span>本地服务已连接</div><div id="stats" class="muted">正在读取资料库…</div></div>
   </aside>
   <main class="workspace">
     <div class="content">
-      <section id="askSection" class="workspace-page assistant-page active" data-workspace-page="assistant">
+      <section id="designSection" class="workspace-page engineering-page active" data-workspace-page="design">
+        <header class="page-bar"><div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M4 18.5 15.5 7l2 2L6 20H4v-1.5ZM13.5 9l2 2M5 5h6M5 9h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="page-title-copy"><strong>设计助手</strong><small>项目目录、资料完整性与全过程设计提醒</small></span></div><div class="page-actions"><span class="chip"><i class="chip-dot"></i>工程全过程</span><button class="btn" data-page="tools">打开设计工具</button></div></header>
+        <div class="engineering-body"><div class="engineering-grid">
+          <section class="studio-card"><header class="studio-card-head"><div><h3>创建工程项目</h3><p>按模板自动建立项目及阶段目录</p></div><span class="engine-badge">Workspace</span></header><div class="studio-card-body"><div class="studio-form"><div class="studio-field"><label for="projectName">项目名称</label><input id="projectName" maxlength="120" placeholder="例如：某储能电站工程"></div><div class="studio-field"><label for="projectBase">项目保存位置</label><div class="studio-row"><input id="projectBase" placeholder="选择项目根目录"><button class="btn desktop-only" data-studio-act="chooseProjectBase">浏览</button></div></div></div><div class="studio-actions"><button class="btn btn-primary" data-studio-act="createProject">创建项目与目录</button></div><div id="projectCreateState" class="studio-state" aria-live="polite"></div></div></section>
+          <section class="studio-card"><header class="studio-card-head"><div><h3>当前项目</h3><p>切换项目并查看目录和完整度</p></div><select id="projectSelect"><option value="">选择已有项目…</option></select></header><div class="studio-card-body"><div id="projectEmpty" class="empty-state">尚未创建工程项目。</div><div id="projectContent" style="display:none"><div><strong id="activeProjectTitle"></strong><div id="activeProjectPath" class="muted"></div></div><div id="projectMetrics" class="project-summary"></div><div id="projectFolderList" class="folder-chips"></div><div class="studio-actions"><button class="btn desktop-only" data-studio-act="openProjectDirectory">打开目录</button><button class="btn" data-studio-act="syncProjectFolders">同步目录模板</button></div></div></div></section>
+          <section class="studio-card checklist-card"><header class="studio-card-head"><div><h3>设计全过程资料完整性</h3><p>采用可追踪检查清单；缺项会持续保留，适用于收资、初设和施工图交接</p></div><span id="checklistCount" class="chip">0 / 0 已具备</span></header><div class="studio-card-body"><div class="check-progress"><i id="checklistProgress"></i></div><div id="checklistList" class="check-groups"></div><div class="check-add"><input id="customCheckCategory" placeholder="分类，如：自定义"><input id="customCheckLabel" placeholder="增加项目专用检查项"><button class="btn" data-studio-act="addChecklistItem">添加检查项</button></div></div></section>
+        </div></div>
+      </section>
+      <section id="askSection" class="workspace-page assistant-page" data-workspace-page="assistant">
         <header class="page-bar">
-          <div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="page-title-copy"><strong>工程助手</strong><small>基于数据库中的规范、图纸和技术资料回答</small></span></div>
+          <div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M5 5.5h14v10H9l-4 3v-13Z" stroke-width="1.7"/><path d="M8 9h8M8 12h5" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="page-title-copy"><strong>知识库问答</strong><small>基于数据库中的规范、图纸和技术资料回答</small></span></div>
           <div class="page-actions"><span class="chip"><i class="chip-dot"></i>RAG + 通用模型</span><button class="btn" data-act="newChat">新对话</button><button class="btn" data-page="database">打开文档数据库</button></div>
         </header>
         <div class="assistant-stream"><div class="assistant-inner">
@@ -88,6 +100,12 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
           <textarea id="q" rows="2" aria-label="向知识库提问" placeholder="询问规范条文、设计要求或研究结论…"></textarea>
           <div class="composer-tools"><select id="qMode" title="知识来源" aria-label="知识来源"><option value="auto">智能问答</option><option value="knowledge">仅资料库</option><option value="general">通用对话</option></select><select id="qScenario" title="问答场景" aria-label="问答场景"></select><select id="qScope" title="检索范围" aria-label="检索范围"></select><span class="composer-hint">Enter 发送 · Shift + Enter 换行</span><button class="send-btn" data-act="ask" aria-label="发送问题" title="发送"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 14-7-5 14-2.5-5.5L5 12Z" stroke-width="1.8" stroke-linejoin="round"/><path d="m11.5 13.5 3-3" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
         </div><div id="qState" class="muted qa-status" aria-live="polite"></div></div>
+      </section>
+      <section id="toolsSection" class="workspace-page tools-page" data-workspace-page="tools">
+        <header class="page-bar"><div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4v4M4 8h4M16 16v4M16 16h4M13 5l6 6-8 8-6-6 8-8Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="page-title-copy"><strong>设计工具</strong><small>可扩展工具入口与道路排水坡度设计</small></span></div><div class="page-actions"><span class="chip">快捷键驱动</span></div></header>
+        <div class="tools-body"><div class="tool-cards"><article class="tool-card"><div class="tool-icon">∑</div><div class="tool-copy"><strong>多功能计算器</strong><p>调用现有本地工程计算程序</p><kbd>Ctrl + Alt + C</kbd></div><span id="calculatorBadge" class="engine-badge">检测中</span><button class="btn btn-primary desktop-only" data-studio-act="launchCalculator">启动</button></article><article class="tool-card"><div class="tool-icon">↘</div><div class="tool-copy"><strong>道路排水坡度设计</strong><p>按箭头方向自动推算节点设计标高</p><kbd>Ctrl + Alt + R</kbd></div><button class="btn" data-studio-act="openRoadSlope">打开画布</button></article></div><div id="toolLaunchState" class="studio-state"></div>
+          <section id="roadDesigner" class="road-designer"><div class="road-toolbar"><button class="btn active" data-studio-act="slopeMode" data-slope-mode="select">选择/移动</button><button class="btn" data-studio-act="slopeMode" data-slope-mode="add">布置节点</button><button class="btn" data-studio-act="slopeMode" data-slope-mode="connect">连接箭头</button><span class="separator"></span><label>默认坡度 <input id="slopeDefault" type="number" value="5" step="0.1"> ‰</label><label>标高小数 <input id="slopeDecimals" type="number" value="3" min="0" max="6"></label><button class="btn btn-primary" data-studio-act="autoSlope">自动计算标高</button><button class="btn" data-studio-act="deleteSlope">删除选中</button><button class="btn" data-studio-act="exportSlope">导出 JSON</button><button class="btn" data-studio-act="clearSlope">清空</button><span id="slopeState" class="studio-state"></span></div><div class="road-layout"><div class="road-canvas-wrap"><svg id="slopeCanvas" class="road-canvas" viewBox="0 0 1000 600" aria-label="道路排水坡度设计画布"></svg></div><aside class="road-inspector"><h4>对象属性</h4><div id="slopeInspectorContent"></div><h4 style="margin-top:14px">坡段计算</h4><table id="slopeResults" class="slope-results"></table></aside></div></section>
+        </div>
       </section>
       <section id="librarySection" class="workspace-page database-page" data-workspace-page="database">
         <header class="page-bar">
@@ -111,13 +129,15 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
         <div class="settings-body">
           <nav class="settings-nav" aria-label="设置分类">
             <div class="settings-nav-label">首选项</div>
-            <button class="settings-tab active" data-act="settingsTab" data-settings-tab="parser"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>资料与解析</b><small>资料库、MinerU 与识别参数</small></span></button>
+            <button class="settings-tab active" data-act="settingsTab" data-settings-tab="workspace"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h7l2 2h7v10H4V7Z" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 13h8M8 16h5" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>项目与工具</b><small>项目目录模板和本地设计工具</small></span></button>
+            <button class="settings-tab" data-act="settingsTab" data-settings-tab="parser"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 5v4M8 15v4" stroke-width="1.7" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>资料与解析</b><small>资料库、MinerU 与识别参数</small></span></button>
             <button class="settings-tab" data-act="settingsTab" data-settings-tab="model"><svg viewBox="0 0 24 24" fill="none"><path d="M7 5.5h10A2.5 2.5 0 0 1 19.5 8v8A2.5 2.5 0 0 1 17 18.5H7A2.5 2.5 0 0 1 4.5 16V8A2.5 2.5 0 0 1 7 5.5Z" stroke-width="1.6"/><path d="M8 10h8M8 14h5" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>模型接口</b><small>对话模型、向量模型与密钥</small></span></button>
             <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="integration"><svg viewBox="0 0 24 24" fill="none"><path d="M9 7H7a4 4 0 0 0 0 8h2M15 7h2a4 4 0 0 1 0 8h-2M8 11h8v2H8z" stroke-width="1.6" stroke-linecap="round"/></svg><span class="settings-tab-copy"><b>Harness 连接</b><small>知识工具与一键规范审查工作流</small></span></button>
             <button class="settings-tab desktop-only" data-act="settingsTab" data-settings-tab="updates"><svg viewBox="0 0 24 24" fill="none"><path d="M5 12a7 7 0 0 1 12-4.9L19 9M19 5v4h-4M19 12a7 7 0 0 1-12 4.9L5 15m0 4v-4h4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="settings-tab-copy"><b>软件更新</b><small>版本、自动检查与安装</small></span></button>
           </nav>
           <div class="settings-content">
-            <section class="settings-pane active" data-settings-pane="parser">
+            <section class="settings-pane active" data-settings-pane="workspace"><header class="settings-pane-head"><h3>项目与设计工具</h3><p>配置新建工程的目录模板和可调用的本地程序。</p></header><div class="settings-section"><div class="settings-section-title">项目目录模板</div><div class="field-help">每行一个目录。保存后用于新建项目，也可在设计助手中同步到现有项目。</div><textarea id="projectFolderTemplates" class="settings-textarea"></textarea><div class="settings-actions"><button class="btn btn-primary" data-studio-act="saveWorkspaceSettings">保存目录模板</button></div><div id="workspaceSettingsState" class="studio-state"></div></div><div class="settings-section"><div class="settings-section-title">多功能计算器</div><div class="field-row"><input id="calculatorPath" placeholder="多功能计算器.exe 的完整路径"><button class="btn desktop-only" data-studio-act="chooseCalculator">浏览</button></div><div class="settings-actions"><button class="btn btn-primary desktop-only" data-studio-act="saveCalculator">保存工具路径</button></div><div id="calculatorState" class="studio-state"></div></div></section>
+            <section class="settings-pane" data-settings-pane="parser">
               <header class="settings-pane-head"><h3>资料与解析</h3><p>设置资料保存位置、MinerU 引擎和 PDF 识别方式。</p></header>
               <div class="settings-section"><div class="settings-section-title">本地路径</div><div class="field"><label for="lib">资料库路径</label><div class="field-row"><input id="lib" placeholder="解析文件的保存位置"><button class="btn desktop-only" data-act="chooseLibrary">浏览</button></div></div><div class="field"><label for="mineru">MinerU 解析引擎</label><div class="field-row"><input id="mineru" placeholder="mineru.exe 或完整路径"><button class="btn desktop-only" data-act="chooseMineru">浏览</button><button class="btn" data-act="check">检测</button></div><div id="parserState" class="parser-state muted">正在检测解析引擎…</div></div></div>
               <div class="settings-section"><div class="settings-section-title">服务与识别参数</div><div class="config-grid"><input id="servicePort" type="number" min="1024" max="65535" step="1" placeholder="服务端口"><select id="parserBackend" title="解析后端"><option value="pipeline">Pipeline（通用）</option><option value="vlm">VLM</option><option value="hybrid">Hybrid</option><option value="vlm-engine">VLM Engine</option><option value="hybrid-engine">Hybrid Engine</option><option value="vlm-http-client">VLM HTTP Client</option><option value="hybrid-http-client">Hybrid HTTP Client</option><option value="hybrid-auto-engine">Hybrid Auto Engine</option></select><select id="parserMethod" title="识别方式"><option value="auto">自动识别</option><option value="txt">文本优先</option><option value="ocr">OCR 优先</option></select><select id="parserLanguage" title="文档语言"><option value="ch">中文</option><option value="en">英文</option><option value="japan">日文</option><option value="korean">韩文</option></select><select id="modelSource" class="wide" title="模型来源"><option value="modelscope">ModelScope（国内推荐）</option><option value="huggingface">Hugging Face</option></select></div><div class="toggle-grid"><label class="switch"><input id="parseTables" type="checkbox"><span>识别表格</span></label><label class="switch"><input id="parseFormula" type="checkbox"><span>识别公式</span></label></div><div class="settings-actions"><button class="btn btn-primary" data-act="save">保存解析设置</button><span id="configState" class="field-help" aria-live="polite"></span></div><div class="field-help restart-note">端口修改会在下次启动程序时生效。</div></div>
@@ -530,7 +550,7 @@ function toggleTheme(){
   try{ localStorage.setItem('kb-theme',next); }catch(e){}
 }
 function showPage(name){
-  var page=name==='database'?'database':'assistant';
+  var page=['design','assistant','database','tools'].indexOf(name)>=0?name:'design';
   document.querySelectorAll('[data-workspace-page]').forEach(function(el){ el.classList.toggle('active',el.getAttribute('data-workspace-page')===page); });
   document.querySelectorAll('.nav-item[data-page]').forEach(function(el){ el.classList.toggle('active',el.getAttribute('data-page')===page); });
   try{ localStorage.setItem('specflow-page',page); }catch(e){}
@@ -540,7 +560,7 @@ function closeSettings(){
   document.body.classList.remove('settings-open');
 }
 function selectSettingsTab(name){
-  var allowed=['parser','model','integration','updates']; var next=allowed.indexOf(name)>=0?name:'parser'; if(!DESKTOP&&(next==='integration'||next==='updates')) next='parser'; ACTIVE_SETTINGS_TAB=next;
+  var allowed=['workspace','parser','model','integration','updates']; var next=allowed.indexOf(name)>=0?name:'workspace'; if(!DESKTOP&&(next==='integration'||next==='updates')) next='workspace'; ACTIVE_SETTINGS_TAB=next;
   document.querySelectorAll('[data-settings-tab]').forEach(function(button){ button.classList.toggle('active',button.getAttribute('data-settings-tab')===next); });
   document.querySelectorAll('[data-settings-pane]').forEach(function(pane){ pane.classList.toggle('active',pane.getAttribute('data-settings-pane')===next); });
   try{ localStorage.setItem('specflow-settings-tab',next); }catch(e){}
@@ -703,15 +723,18 @@ document.getElementById('settingsSection').addEventListener('toggle',function(){
 document.addEventListener('keydown',function(e){
   if(e.target&&e.target.id==='groupNameInput'){ if(e.key==='Enter'){ e.preventDefault(); saveGroup(); return; } if(e.key==='Escape'){ e.preventDefault(); cancelGroup(); return; } }
   if(e.ctrlKey&&String(e.key).toLowerCase()==='n'){ e.preventDefault(); newChat(); return; }
-  if(e.ctrlKey&&e.key==='1'){ e.preventDefault(); showPage('assistant'); return; }
-  if(e.ctrlKey&&e.key==='2'){ e.preventDefault(); showPage('database'); return; }
+  if(e.ctrlKey&&e.key==='1'){ e.preventDefault(); showPage('design'); return; }
+  if(e.ctrlKey&&e.key==='2'){ e.preventDefault(); showPage('assistant'); return; }
+  if(e.ctrlKey&&e.key==='3'){ e.preventDefault(); showPage('database'); return; }
+  if(e.ctrlKey&&e.key==='4'){ e.preventDefault(); showPage('tools'); return; }
   if(e.key!=='Escape') return; if(document.getElementById('groupDialog').style.display!=='none'){cancelGroup();return;} if(document.body.classList.contains('settings-open')){closeSettings();return;} if(document.getElementById('modal').style.display!=='none'){ document.getElementById('modal').style.display='none'; document.getElementById('vbox').innerHTML=''; }
 });
-try{ showPage(localStorage.getItem('specflow-page')||'assistant'); }catch(e){ showPage('assistant'); }
-try{ selectSettingsTab(localStorage.getItem('specflow-settings-tab')||'parser'); }catch(e){ selectSettingsTab('parser'); }
+try{ showPage(localStorage.getItem('specflow-page')||'design'); }catch(e){ showPage('design'); }
+try{ selectSettingsTab(localStorage.getItem('specflow-settings-tab')||'workspace'); }catch(e){ selectSettingsTab('workspace'); }
 syncQaMode();
 initDesktop(); load(); loadConversations(); setInterval(load,2500);
 </script>
+<script src="/app/workspace.js"></script>
 <script type="module">
 import * as pdfjs from '/lib/pdf.min.mjs';
 pdfjs.GlobalWorkerOptions.workerSrc='/lib/pdf.worker.min.mjs';

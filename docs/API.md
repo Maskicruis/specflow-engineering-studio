@@ -73,6 +73,20 @@
 | PATCH | `/api/v1/documents/:id` | 文档归组：`{groupId}`；空字符串表示未分组 |
 | GET | `/api/v1/documents?group=<id>` | 只列出指定分组文档 |
 
+## 工程助手
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/workspace` | 返回目录模板与工程项目摘要 |
+| PATCH | `/api/v1/workspace` | 更新目录模板：`{defaultFolders: string[]}` |
+| POST | `/api/v1/projects` | 创建工程及目录：`{name, baseDirectory, folders?}` |
+| GET | `/api/v1/projects/:id` | 项目详情、目录、检查项和完成率 |
+| POST | `/api/v1/projects/:id/folders/sync` | 把当前目录模板补充到已有项目 |
+| POST | `/api/v1/projects/:id/checklist` | 增加检查项：`{category?, label, required?}` |
+| PATCH | `/api/v1/projects/:id/checklist/:itemId` | 更新检查项：`{status:"missing"|"ready"|"na", note?}` |
+
+工程接口可被 Agent 或调度器独立调用。所有目录名会去重并拒绝路径穿越；项目检查进度只统计未标记为“不适用”的项目。
+
 ## 与设计流程 / 其它系统联动（预留）
 
 1. **定位跳转**：拿 `citations[].locate`（docId + page + itemId + bbox + bboxNormalized）即可在任意阅读器中打开原 PDF 并高亮该块；优先使用左上原点的归一化坐标，避免解析页尺寸与实际 PDF 点尺寸存在偏差；

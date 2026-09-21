@@ -29,8 +29,23 @@ test('desktop bridge exposes only bounded window and picker operations', () => {
   assert.match(preload, /setAutoCheck/);
   assert.match(preload, /connector:\s*\{/);
   assert.match(preload, /connector:install/);
+  assert.match(preload, /balance:\s*\{/);
+  assert.match(preload, /designTools:\s*\{/);
+  assert.match(preload, /chooseProjectDirectory/);
+  assert.match(preload, /project:open-directory/);
   assert.doesNotMatch(preload, /harness:\s*\{/);
   assert.doesNotMatch(preload, /require:\s*require/);
+});
+
+test('desktop shell integrates balance, project folders and external design tools', () => {
+  assert.match(main, /fetchDeepSeekBalance/);
+  assert.match(main, /new DesignToolRegistry/);
+  assert.match(main, /dialog:choose-project-directory/);
+  assert.match(main, /design-tools:launch/);
+  assert.match(ui, /id="balanceTitleButton"/);
+  assert.match(ui, /data-workspace-page="design"/);
+  assert.match(ui, /data-workspace-page="tools"/);
+  assert.ok(pkg.build.files.includes('ui-modules/**/*'));
 });
 
 test('desktop shell connects to external DeepSeek Harness without hosting a second runtime', () => {

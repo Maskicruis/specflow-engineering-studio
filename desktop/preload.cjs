@@ -15,7 +15,20 @@ contextBridge.exposeInMainWorld('specflowDesktop', {
   },
   dialog: {
     chooseDirectory: () => ipcRenderer.invoke('dialog:choose-directory'),
-    chooseMineru: () => ipcRenderer.invoke('dialog:choose-mineru')
+    chooseMineru: () => ipcRenderer.invoke('dialog:choose-mineru'),
+    chooseProjectDirectory: () => ipcRenderer.invoke('dialog:choose-project-directory'),
+    chooseDesignTool: () => ipcRenderer.invoke('dialog:choose-design-tool')
+  },
+  balance: {
+    get: () => ipcRenderer.invoke('balance:get')
+  },
+  projects: {
+    openDirectory: target => ipcRenderer.invoke('project:open-directory', String(target || ''))
+  },
+  designTools: {
+    list: () => ipcRenderer.invoke('design-tools:list'),
+    update: (id, patch) => ipcRenderer.invoke('design-tools:update', String(id || ''), patch || {}),
+    launch: id => ipcRenderer.invoke('design-tools:launch', String(id || ''))
   },
   connector: {
     status: () => ipcRenderer.invoke('connector:status'),

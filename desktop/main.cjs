@@ -5,6 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { UpdateManager } = require('./update-manager.cjs');
 const { connectorStatus, installConnector, writeDiscovery } = require('./harness-connector.cjs');
+const { fetchDeepSeekBalance } = require('./deepseek-balance.cjs');
+const { DesignToolRegistry } = require('./design-tools.cjs');
 const updateConfig = require('../build/update-config.json');
 const packageMetadata = require('../package.json');
 
@@ -12,6 +14,7 @@ let backend = null;
 let mainWindow = null;
 let runtimeInfo = null;
 let updater = null;
+let designTools = null;
 let desktopPreferences = { autoCheckUpdates: true };
 
 function preferencesPath() {
@@ -128,7 +131,31 @@ function registerIpc() {
     });
     return result.canceled ? '' : result.filePaths[0];
   });
+  ipcMain.handle('dialog:choose-project-directory', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择工程项目保存目录',
+      properties: ['openDirectory', 'createDirectory']
+    });
+    return result.canceled ? '' : result.filePaths[0];
+  });
+  ipcMain.handle('dialog:choose-design-tool', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: '选择设计工具程序',
+      properties: ['openFile'],
+      filters: [{ name: 'Windows 程序', extensions: ['exe', 'cmd', 'bat'] }]
+    });
+    return result.canceled ? '' : result.filePaths[0];
+  });
   ipcMain.handle('desktop:open-data', () => shell.openPath(runtimeInfo.dataDir));
+  ipcMain.handle('project:open-directory', (_event, target) => {
+    const resolved = path.resolve(String(target || ''));
+    if (!fs.existsSync(resolved) || !fs.statSync(resolved).isDirectory()) throw new Error('工程目录不存在');
+    return shell.openPath(resolved);
+  });
+  ipcMain.handle('design-tools:list', () => designTools.list());
+  ipcMain.handle('design-tools:update', (_event, id, patch) => designTools.update(id, patch));
+  ipcMain.handle('design-tools:launch', (_event, id) => designTools.launch(id));
+  ipcMain.handle('balance:get', () => fetchDeepSeekBalance());
   ipcMain.handle('connector:status', () => connectorStatus());
   ipcMain.handle('connector:install', () => installConnector());
   ipcMain.handle('connector:open-profile', () => shell.openPath(connectorStatus().profile));
@@ -238,6 +265,7 @@ else {
       repository: updateConfig.repository,
       updateDir: path.join(app.getPath('userData'), 'updates')
     });
+    designTools = new DesignToolRegistry({ dataDir: app.getPath('userData') });
     updater.on('status', status => send('updates:status', status));
     registerIpc();
     const runtime = await startBackend();

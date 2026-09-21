@@ -178,6 +178,11 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const filename = path.basename(pathname);
         return sendStaticAsset(request, response, 'lib/' + filename, path.join(ROOT, 'lib', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
+      if (pathname.startsWith('/app/')) {
+        const filename = path.basename(pathname);
+        if (!['workspace.js', 'workspace.css'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
+        return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
+      }
 
       // Stable, versioned interface for agents and external schedulers.
       if (pathname === '/api/v1/health' && request.method === 'GET') return success(response, service.health());
@@ -238,6 +243,19 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       let group = pathname.match(/^\/api\/v1\/groups\/([^/]+)$/);
       if (group && request.method === 'PATCH') return success(response, service.updateGroup(decodeURIComponent(group[1]), await readJsonBody(request)));
       if (group && request.method === 'DELETE') return success(response, service.deleteGroup(decodeURIComponent(group[1])));
+
+      // 工程助手：项目目录模板与全过程资料完整性检查。
+      if (pathname === '/api/v1/workspace' && request.method === 'GET') return success(response, service.workspaceSnapshot());
+      if (pathname === '/api/v1/workspace' && request.method === 'PATCH') return success(response, service.updateWorkspaceSettings(await readJsonBody(request)));
+      if (pathname === '/api/v1/projects' && request.method === 'POST') return success(response, service.createEngineeringProject(await readJsonBody(request)), 201);
+      let engineeringProject = pathname.match(/^\/api\/v1\/projects\/([^/]+)$/);
+      if (engineeringProject && request.method === 'GET') return success(response, service.engineeringProject(decodeURIComponent(engineeringProject[1])));
+      let projectFolderSync = pathname.match(/^\/api\/v1\/projects\/([^/]+)\/folders\/sync$/);
+      if (projectFolderSync && request.method === 'POST') return success(response, service.syncEngineeringProjectFolders(decodeURIComponent(projectFolderSync[1])));
+      let projectChecklist = pathname.match(/^\/api\/v1\/projects\/([^/]+)\/checklist$/);
+      if (projectChecklist && request.method === 'POST') return success(response, service.addEngineeringChecklistItem(decodeURIComponent(projectChecklist[1]), await readJsonBody(request)), 201);
+      let projectChecklistItem = pathname.match(/^\/api\/v1\/projects\/([^/]+)\/checklist\/([^/]+)$/);
+      if (projectChecklistItem && request.method === 'PATCH') return success(response, service.updateEngineeringChecklist(decodeURIComponent(projectChecklistItem[1]), decodeURIComponent(projectChecklistItem[2]), await readJsonBody(request)));
 
       // 结构化条目导出（与设计流程/其它系统联动预留）
       if (pathname === '/api/v1/export/items' && request.method === 'POST') {

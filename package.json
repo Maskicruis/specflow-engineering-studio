@@ -1,8 +1,8 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
-  "description": "工程文档智能工作台：独立 LLM + MinerU 文档数据库 + DeepSeek Harness 规范审查工作流 + RAG 原文定位与高亮",
+  "description": "工程设计工作台：项目目录、全过程检查、设计工具、独立 LLM、MinerU 文档数据库与 Harness 工作流",
   "type": "commonjs",
   "main": "index.js",
   "bin": {
@@ -16,7 +16,7 @@
     "release:publish": "node scripts/publish-release.cjs",
     "serve": "node cli.js serve",
     "test": "node --test",
-    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/update-manager.cjs && node --check desktop/harness-connector.cjs && node --check scripts/prepare-runtime.cjs && node --check scripts/publish-release.cjs"
+    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/update-manager.cjs && node --check desktop/harness-connector.cjs && node --check desktop/deepseek-balance.cjs && node --check desktop/design-tools.cjs && node --check src/project-workspace.js && node --check ui-modules/workspace.js && node --check scripts/prepare-runtime.cjs && node --check scripts/publish-release.cjs"
   },
   "author": "Maskicruis",
   "dependencies": {
@@ -42,6 +42,7 @@
       "build/update-config.json",
       "build/app.ico",
       "src/**/*",
+      "ui-modules/**/*",
       "lib/**/*",
       "schemas/**/*",
       "packages/dsh-specflow-knowledge/**/*",

@@ -89,3 +89,32 @@ test('limits external search to the requested document group', async t => {
   assert.deepEqual(searchOptions, { topK: 6, docIds: ['doc_fire_1', 'doc_fire_2'] });
   assert.equal(body.data.hits[0].docId, 'doc_fire_1');
 });
+
+test('exposes project templates, project creation and checklist updates', async t => {
+  const detail = {
+    id: 'prj_test', name: '试验工程', projectDirectory: 'C:\\Projects\\试验工程', folders: ['00工作区间'],
+    checklist: [{ id: 'check_flood-level', status: 'missing' }],
+    checklistProgress: { ready: 0, applicable: 1, total: 1, percent: 0 }
+  };
+  const service = Object.assign(fakeService(), {
+    workspaceSnapshot: () => ({ settings: { defaultFolders: ['00工作区间'] }, projects: [] }),
+    updateWorkspaceSettings: body => ({ defaultFolders: body.defaultFolders }),
+    createEngineeringProject: body => ({ ...detail, name: body.name }),
+    engineeringProject: () => detail,
+    syncEngineeringProjectFolders: () => detail,
+    updateEngineeringChecklist: (_projectId, _itemId, patch) => ({ ...detail, checklist: [{ id: 'check_flood-level', status: patch.status }] }),
+    addEngineeringChecklistItem: (_projectId, body) => ({ ...detail, checklist: detail.checklist.concat({ id: 'check_custom', label: body.label, status: 'missing' }) })
+  });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+
+  const snapshot = await fetch(base + '/api/v1/workspace').then(response => response.json());
+  assert.deepEqual(snapshot.data.settings.defaultFolders, ['00工作区间']);
+  const createdResponse = await fetch(base + '/api/v1/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: '变电站项目', baseDirectory: 'C:\\Projects' }) });
+  assert.equal(createdResponse.status, 201);
+  assert.equal((await createdResponse.json()).data.name, '变电站项目');
+  const checked = await fetch(base + '/api/v1/projects/prj_test/checklist/check_flood-level', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ready' }) }).then(response => response.json());
+  assert.equal(checked.data.checklist[0].status, 'ready');
+});

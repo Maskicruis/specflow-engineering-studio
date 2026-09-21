@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-53%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-62%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -12,6 +12,11 @@
 
 ## 主要能力
 
+- **工程助手 / 设计助手**：设置项目名称和保存位置后，自动建立 `00工作区间`、`01初步设计`、`02施工图设计`、`03提资资料`、`04收资资料`、`05规程规范`；目录模板可在设置中增删并同步到现有项目。
+- **全过程资料完整性清单**：按项目依据、基础资料、收资与接口、初步设计、施工图准备分阶段跟踪；每项支持“待收集 / 已具备 / 不适用”、备注和完成率，内置洪水位、技术经济指标等关键提醒，也可追加自定义项目。
+- **道路排水坡度设计**：Visio 式节点与箭头画布；从高点向低点连接排水方向，按坡长与坡度自动推算节点设计标高，支持标高小数位、箭头反向、节点拖动、坡段结果表和 JSON 导出。
+- **可扩展设计工具**：`Ctrl+Alt+C` 调用用户配置的多功能计算器，`Ctrl+Alt+R` 打开坡度设计器；外部工具只登记路径，不把第三方程序复制进 Release。
+- **DeepSeek 余额**：桌面标题栏读取当前用户 DeepSeek Harness 的凭据并查询官方余额接口；密钥不会返回界面、日志或写入仓库。
 - **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
 - **外部 Harness 连接**：不再启动第二套 DSH 服务，也不再占用 Harness 端口；一键向 DeepSeek Harness Studio 安装 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask` 工具。
 - **自动服务发现**：SpecFlow 启动时向当前用户的 DSH 目录写入本机回环地址，Harness 工具可自动适配自定义端口或端口回退。
@@ -47,13 +52,14 @@
 ## 使用流程
 
 1. 打开“设置 → 模型接口”，填写 OpenAI 兼容 Base URL、模型名和 API Key；如只使用本地检索，可以跳过。
-2. 在“资料与解析”中选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
-3. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新集成组件”，然后重启一次 DeepSeek Harness Studio。
-4. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
-5. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
-6. 左侧“最近对话”可恢复并继续既有问答，新对话按钮会创建一条独立记录。
-7. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
-8. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，项目记录、对话、分组和资料库不会被删除。
+2. 在“设计助手”中选择项目根目录并填写项目名，创建标准目录；随后用全过程清单持续记录已收资料、缺项和责任备注。
+3. 在“资料与解析”中选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
+4. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新集成组件”，然后重启一次 DeepSeek Harness Studio。
+5. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
+6. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
+7. 在“设计工具”中调用计算器，或布置道路排水节点和箭头、设置坡度及控制标高后自动计算。
+8. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
+9. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，工程项目、对话、分组和资料库不会被删除。
 
 ## 独立运行与 Agent 接入
 
@@ -73,6 +79,10 @@ GET   /api/v1/search?q=消防车道&topK=8&group=<分组ID>
 POST  /api/v1/ask
 POST  /api/v1/ask/stream
 GET   /api/v1/conversations?summary=1
+GET   /api/v1/workspace
+PATCH /api/v1/workspace
+POST  /api/v1/projects
+PATCH /api/v1/projects/:id/checklist/:itemId
 GET   /api/v1/documents/:id/content
 GET   /api/v1/documents/:id/source
 POST  /api/v1/export/items
@@ -85,6 +95,8 @@ PATCH /api/v1/settings
 
 - PDF、解析结果、索引、会话与设置默认保存在当前 Windows 用户的应用数据目录或用户指定的数据库目录；
 - Harness 的项目、会话与模型凭据仍完全由 DeepSeek Harness Studio 管理；SpecFlow 仅写入本机服务发现记录，并在用户点击安装时增加一个工具插件和一个本地审查 Skill；
+- 标题栏余额仅在本机桌面进程中读取 Harness 凭据并访问 DeepSeek 官方余额接口，API Key 不会通过页面桥接返回；
+- 多功能计算器保持在用户指定位置运行，安装包和仓库均不复制该可执行文件；
 - 更新和覆盖安装不会主动删除资料库；
 - 智能/资料库模式会把检索命中的片段发给已配置的 LLM；通用对话只发送对话内容。若使用本地兼容模型，可保持资料不外发；
 - API Key 不写入仓库，也不会进入 Release 产物。
@@ -100,4 +112,4 @@ npm run build:desktop
 
 `npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。自动化验证覆盖 Harness 工具与审查 Skill 安装、无内置 Harness 运行时、独立 LLM、分组检索、Codex 式最近对话、文件分组、更新校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、引用定位和标准接口。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.7.1 发布说明](docs/RELEASE_NOTES_0.7.1_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.8.0 发布说明](docs/RELEASE_NOTES_0.8.0_CN.md)

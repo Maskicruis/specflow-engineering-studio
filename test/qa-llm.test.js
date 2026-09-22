@@ -50,6 +50,19 @@ test('未配置 LLM：降级为检索模式并返回引用', async () => {
   assert.ok(res.note && res.note.includes('LLM'));
 });
 
+test('规范术语含糊时先追问，不让模型直接给工程结论', async () => {
+  const stub = createStubLlm();
+  const port = await stub.listen();
+  const settings = { library, llm: { baseUrl: 'http://127.0.0.1:' + port + '/v1', apiKey: '', model: 'stub-model', timeoutMs: 10000 } };
+  const rag = new RagIndex(settings);
+  const res = await ask({ question: '综合楼的消防间距和火灾危险性分类是什么？', scenarioId: 'design' }, { rag, settings });
+  assert.equal(res.mode, 'clarification');
+  assert.equal(res.needsClarification, true);
+  assert.match(res.answer, /包含哪些用途/);
+  assert.equal(stub.state.calls, 0);
+  await stub.close();
+});
+
 test('配置 LLM 后：生成式回答并保留可定位引用', async () => {
   const stub = createStubLlm();
   const port = await stub.listen();
@@ -62,7 +75,8 @@ test('配置 LLM 后：生成式回答并保留可定位引用', async () => {
   assert.ok(res.citations[0].page === 1 && Array.isArray(res.citations[0].bbox), '引用可定位');
   assert.deepEqual(res.citations[0].bboxNormalized, [0.08, 0.12, 0.7, 0.17], '引用包含稳定的归一化高亮坐标');
   assert.deepEqual(res.citations[0].locate.bboxNormalized, res.citations[0].bboxNormalized, '标准定位对象包含归一化坐标');
-  assert.match(res.citations[0].sourceUrl, /\/source#page=1$/, '引用包含可直接打开原页的 URL');
+  assert.match(res.citations[0].sourceUrl, /^\/open\/citation\?/, '引用包含可唤醒 SpecFlow 阅读器的 URL');
+  assert.match(res.citations[0].rawSourceUrl, /\/source#page=1$/, '同时保留原始 PDF URL');
   const sent = JSON.stringify(stub.state.lastBody || {});
   assert.match(sent, /片段 1/, '提示词中包含带编号的上下文片段');
   assert.match(sent, /chat\/completions|messages/, '走 OpenAI 兼容接口');

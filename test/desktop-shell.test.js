@@ -51,6 +51,8 @@ test('desktop shell integrates balance, project folders and external design tool
 test('desktop shell connects to external DeepSeek Harness without hosting a second runtime', () => {
   assert.match(main, /installConnector/);
   assert.match(main, /writeDiscovery/);
+  assert.match(main, /specflow:open-citation/);
+  assert.match(main, /openCitationInMain/);
   assert.doesNotMatch(main, /new HarnessRuntime/);
   assert.doesNotMatch(main, /will-attach-webview/);
   assert.doesNotMatch(ui, /id="harnessView"/);

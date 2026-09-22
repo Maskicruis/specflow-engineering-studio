@@ -3,6 +3,8 @@
 const { getScenario } = require('./scenarios');
 const { chat, chatStream, isConfigured } = require('./llm');
 const { searchDetailed } = require('./rag');
+const { decorateCitation } = require('./citation-links');
+const { planQuery } = require('./query-planner');
 
 const RETRIEVAL_MODES = new Set(['auto', 'knowledge', 'general']);
 
@@ -37,13 +39,11 @@ function buildContexts(hits, maxChars = 8000) {
     used += block.length; lines.push(block);
     const bbox = hit.bbox || null;
     const bboxNormalized = hit.bboxNormalized || null;
-    citations.push({
+    citations.push(decorateCitation({
       n, docId: hit.docId, title: hit.title, page: hit.page, itemId: hit.itemId,
       ref: hit.ref || '', type: hit.type, bbox, bboxNormalized,
-      sourceUrl: '/api/v1/documents/' + encodeURIComponent(hit.docId) + '/source#page=' + hit.page,
-      locate: { docId: hit.docId, page: hit.page, itemId: hit.itemId, bbox, bboxNormalized },
       snippet: hit.snippet || '', score: hit.score, matched: hit.matched || ['bm25']
-    });
+    }));
   });
   return { contextText: lines.join('\n\n'), citations };
 }
@@ -78,20 +78,29 @@ function buildMessages(scenario, contextText, question, options = {}) {
 async function retrieve(question, payload, deps) {
   const scenario = getScenario(payload.scenarioId || payload.scenario);
   const retrievalMode = normalizeRetrievalMode(payload.retrievalMode);
+  const history = normalizeHistory(payload.history);
+  const planningContext = history.filter(item => item.role === 'user').slice(-1).map(item => item.content).concat(question).join('\n');
+  const queryPlan = planQuery(planningContext, { currentQuery: question });
   if (retrievalMode === 'general') {
-    return { hits: [], retrieval: { mode: 'disabled', embeddingModel: '', vectors: 0, fused: false }, scenario, retrievalMode };
+    return { hits: [], retrieval: { mode: 'disabled', embeddingModel: '', vectors: 0, fused: false }, scenario, retrievalMode, queryPlan };
+  }
+  if (queryPlan.needsClarification) {
+    return { hits: [], retrieval: { mode: 'clarification', embeddingModel: '', vectors: 0, fused: false }, scenario, retrievalMode, queryPlan };
   }
   const topK = payload.topK || scenario.topK;
   const docIds = Array.isArray(payload.docIds) ? payload.docIds : null;
-  const detailed = await searchDetailed(deps.rag, question, { topK, docIds }, deps);
-  return { hits: detailed.hits, retrieval: detailed.retrieval, scenario, retrievalMode };
+  const detailed = await searchDetailed(deps.rag, queryPlan.retrievalQuery || question, { topK, docIds }, deps);
+  return { hits: detailed.hits, retrieval: detailed.retrieval, scenario, retrievalMode, queryPlan };
 }
 
 async function ask(payload, deps) {
   const question = String(payload.question || '').trim();
-  const { hits, retrieval, scenario, retrievalMode } = await retrieve(question, payload, deps);
+  const { hits, retrieval, scenario, retrievalMode, queryPlan } = await retrieve(question, payload, deps);
   const { contextText, citations } = buildContexts(hits);
-  const base = { scenario: scenario.id, retrieval, retrievalMode };
+  const base = { scenario: scenario.id, retrieval, retrievalMode, queryPlan };
+  if (queryPlan.needsClarification) {
+    return Object.assign({ ok: true, mode: 'clarification', grounding: 'none', answer: queryPlan.clarification.prompt, citations: [], needsClarification: true, clarification: queryPlan.clarification }, base);
+  }
   const configured = isConfigured(deps.settings.llm);
   if (!configured) {
     if (hits.length) return Object.assign({ ok: true, mode: 'retrieval', grounding: 'knowledge', answer: '', citations, note: '尚未配置 LLM：以下为检索到的原文片段。配置模型后可生成完整回答。' }, base);
@@ -112,11 +121,15 @@ async function askStream(payload, deps, emit) {
   try {
     const question = String(payload.question || '').trim();
     if (!question) { emit({ type: 'error', error: '问题不能为空' }); return; }
-    const { hits, retrieval, scenario, retrievalMode } = await retrieve(question, payload, deps);
+    const { hits, retrieval, scenario, retrievalMode, queryPlan } = await retrieve(question, payload, deps);
     const { contextText, citations } = buildContexts(hits);
     const configured = isConfigured(deps.settings.llm);
     const grounding = hits.length && retrievalMode !== 'general' ? 'knowledge' : 'general';
-    emit({ type: 'citations', citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, grounding, scenario: scenario.id });
+    emit({ type: 'citations', citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, grounding, scenario: scenario.id, queryPlan });
+    if (queryPlan.needsClarification) {
+      emit({ type: 'done', mode: 'clarification', grounding: 'none', answer: queryPlan.clarification.prompt, citations: [], needsClarification: true, clarification: queryPlan.clarification, queryPlan });
+      return;
+    }
     if (!configured) {
       if (hits.length) emit({ type: 'done', mode: 'retrieval', grounding: 'knowledge', answer: '', citations, note: '尚未配置 LLM：以下为检索到的相关原文片段。' });
       else emit({ type: 'done', mode: retrievalMode === 'general' ? 'unavailable' : 'empty', grounding, answer: '', citations: [], note: retrievalMode === 'general' ? '通用对话需要先配置 LLM。' : '资料库中未检索到相关内容。' });
@@ -128,7 +141,7 @@ async function askStream(payload, deps, emit) {
     }
     const result = await chatStream(deps.settings.llm, buildMessages(scenario, contextText, question, { retrievalMode, history: payload.history }), delta => emit({ type: 'delta', text: delta }));
     if (!result.ok) { emit({ type: 'error', error: result.error, citations: grounding === 'general' ? [] : citations }); return; }
-    emit({ type: 'done', mode: 'llm', grounding, answer: result.content, citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, scenario: scenario.id });
+    emit({ type: 'done', mode: 'llm', grounding, answer: result.content, citations: grounding === 'general' ? [] : citations, retrieval, retrievalMode, scenario: scenario.id, queryPlan });
   } catch (error) {
     emit({ type: 'error', error: String(error && error.message || error) });
   }

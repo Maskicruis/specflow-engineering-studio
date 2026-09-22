@@ -17,6 +17,8 @@ const { isConfigured: llmConfigured } = require('./llm');
 const { SCENARIOS } = require('./scenarios');
 const { ProjectWorkspace } = require('./project-workspace');
 const { SpecificationMonitor } = require('./spec-monitor');
+const { decorateCitation } = require('./citation-links');
+const { planQuery } = require('./query-planner');
 
 const DOCUMENTS_FILE = path.join(DATA, 'documents.json');
 const GROUPS_FILE = path.join(DATA, 'document-groups.json');
@@ -324,7 +326,14 @@ class KnowledgeBaseService {
   deps() { return { rag: this.rag, settings: this.settings, embeddings }; }
 
   search(query, options = {}) {
-    return this.rag.search(query, options);
+    const queryPlan = planQuery(query);
+    return this.rag.search(queryPlan.retrievalQuery || query, options).map(decorateCitation);
+  }
+
+  searchWithPlan(query, options = {}) {
+    const queryPlan = planQuery(query);
+    const hits = this.rag.search(queryPlan.retrievalQuery || query, options).map(decorateCitation);
+    return { query: String(query || ''), queryPlan, hits };
   }
 
   validGroupId(groupId) {
@@ -525,9 +534,8 @@ class KnowledgeBaseService {
         caption: item.caption || '',
         bbox: item.bbox ? item.bbox.pdf : null,
         bboxNormalized: item.bbox ? item.bbox.normalized : null,
-        sourceUrl: '/api/v1/documents/' + encodeURIComponent(record.id) + '/source#page=' + item.page,
         locate: { docId: record.id, page: item.page, itemId: item.id, bbox: item.bbox ? item.bbox.pdf : null, bboxNormalized: item.bbox ? item.bbox.normalized : null }
-      }))
+      })).map(decorateCitation)
     };
   }
 
@@ -539,8 +547,9 @@ class KnowledgeBaseService {
       features: [
         'pdf-parse(mineru)', 'canonical-document', 'page-bbox-coordinates',
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
-        'citation-jump-highlight', 'inline-citation-links', 'conversation-history', 'multi-turn-chat',
+        'citation-jump-highlight', 'inline-citation-links', 'desktop-citation-handoff', 'conversation-history', 'multi-turn-chat',
         'document-groups', 'group-scoped-retrieval', 'general-llm-fallback', 'item-export',
+        'semantic-query-expansion', 'ambiguity-clarification',
         'engineering-project-workspace', 'project-folder-templates', 'design-completeness-checklist',
         'scheduled-specification-monitoring', 'specification-link-change-detection'
       ],
@@ -553,7 +562,7 @@ class KnowledgeBaseService {
       },
       endpoints: [
         { method: 'GET', path: '/api/v1/capabilities', desc: '能力与 schema 清单（供外部系统发现）' },
-        { method: 'GET', path: '/api/v1/search?q=&topK=&doc=&group=', desc: '本地检索（BM25，可按文档或分组限定）' },
+        { method: 'GET', path: '/api/v1/search?q=&topK=&doc=&group=', desc: '语义查询规划 + 本地检索（可按文档或分组限定）' },
         { method: 'POST', path: '/api/v1/ask', desc: '问答（结构化引用）' },
         { method: 'POST', path: '/api/v1/ask/stream', desc: '问答（SSE 流式）' },
         { method: 'GET', path: '/api/v1/conversations', desc: '会话历史' },
@@ -594,6 +603,7 @@ class KnowledgeBaseService {
       answer: result.answer || '',
       citations: result.citations || [],
       retrieval: result.retrieval || null,
+      queryPlan: result.queryPlan || null,
       retrievalMode: result.retrievalMode || 'auto',
       grounding: result.grounding || '',
       durationMs: Date.now() - started,
@@ -608,7 +618,7 @@ class KnowledgeBaseService {
     const question = String(payload.question || '').trim();
     if (!question) { emit({ type: 'error', error: '问题不能为空' }); return; }
     const started = Date.now();
-    let answer = ''; let citations = []; let mode = ''; let retrieval = null; let retrievalMode = payload.retrievalMode || 'auto'; let grounding = '';
+    let answer = ''; let citations = []; let mode = ''; let retrieval = null; let queryPlan = null; let retrievalMode = payload.retrievalMode || 'auto'; let grounding = '';
     await askStreamContext({
       question,
       scenarioId: payload.scenario,
@@ -617,13 +627,13 @@ class KnowledgeBaseService {
       retrievalMode: payload.retrievalMode,
       history: Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId)
     }, this.deps(), event => {
-      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; }
+      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; queryPlan = event.queryPlan || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; }
       if (event.type === 'delta') answer += event.text || '';
       if (event.type === 'done') { mode = event.mode || 'llm'; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
       emit(event);
     });
     if (mode) {
-      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
+      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, queryPlan, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
       emit({ type: 'saved', conversationId });
     }
   }

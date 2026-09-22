@@ -36,6 +36,20 @@ test('detects an installed and enabled SpecFlow DSH plugin', () => {
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
+test('reports an outdated Harness connector instead of treating it as current', () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'specflow-connector-outdated-'));
+  try {
+    writeJson(path.join(root, 'profiles', 'web', 'package.json'), { name: 'dsh-profile-web', dependencies: { [PACKAGE_NAME]: 'file:test' }, dsh: { profile: { bundles: [PACKAGE_NAME] } } });
+    writeJson(path.join(root, 'profiles', 'web', 'node_modules', '@specflow', 'dsh-knowledge-tools', 'package.json'), { name: PACKAGE_NAME, version: '0.7.1' });
+    fs.mkdirSync(path.join(root, 'skills', SKILL_NAME), { recursive: true });
+    fs.writeFileSync(path.join(root, 'skills', SKILL_NAME, 'SKILL.md'), '---\nname: specflow-design-review\nversion: 0.7.1\n---\n', 'utf8');
+    const status = connectorStatus({ dshHome: root });
+    assert.equal(status.installed, true);
+    assert.equal(status.updateAvailable, true);
+    assert.match(status.message, /请更新到/);
+  } finally { fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('installs the self-contained connector without launching a second Harness runtime', async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'specflow-connector-install-'));
   try {
@@ -70,5 +84,7 @@ test('connector package registers grounded SpecFlow tools', () => {
   assert.match(source, /name: 'specflow_search'/);
   assert.match(source, /name: 'specflow_ask'/);
   assert.match(source, /sourceUrl/);
+  assert.match(source, /markdownLink/);
+  assert.match(source, /action: 'clarify_user'/);
   assert.match(source, /loopback HTTP addresses only/);
 });

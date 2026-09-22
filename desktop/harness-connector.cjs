@@ -79,11 +79,15 @@ function connectorStatus(options = {}) {
   const declared = Boolean(manifest.dependencies && manifest.dependencies[PACKAGE_NAME]);
   const enabled = Array.isArray(manifest?.dsh?.profile?.bundles) && manifest.dsh.profile.bundles.includes(PACKAGE_NAME);
   const installedManifest = readJson(path.join(profile, 'node_modules', '@specflow', 'dsh-knowledge-tools', 'package.json'));
+  const bundledManifest = readJson(path.join(pluginSource(), 'package.json'));
   const pluginInstalled = Boolean(declared && enabled && installedManifest.version);
   const skillPath = path.join(root, 'skills', SKILL_NAME);
   const skillDocument = path.join(skillPath, 'SKILL.md');
   const skillVersion = readSkillVersion(skillDocument);
+  const bundledVersion = bundledManifest.version || '';
+  const bundledSkillVersion = readSkillVersion(path.join(skillSource(), 'SKILL.md'));
   const skillInstalled = Boolean(skillVersion);
+  const updateAvailable = Boolean(pluginInstalled && skillInstalled && (installedManifest.version !== bundledVersion || skillVersion !== bundledSkillVersion));
   return {
     available: Boolean(manifest.name),
     installed: Boolean(pluginInstalled && skillInstalled),
@@ -92,14 +96,19 @@ function connectorStatus(options = {}) {
     declared,
     enabled,
     version: installedManifest.version || '',
+    bundledVersion,
     skillVersion,
+    bundledSkillVersion,
+    updateAvailable,
     skillName: SKILL_NAME,
     skillPath,
     profile,
     pluginSource: pluginSource(),
     skillSource: skillSource(),
     message: pluginInstalled && skillInstalled
-      ? `连接工具 ${installedManifest.version} 与 /${SKILL_NAME} 工作流已安装`
+      ? updateAvailable
+        ? `Harness 集成组件仍是 ${installedManifest.version || skillVersion}，请更新到 ${bundledVersion || bundledSkillVersion} 并重启 Harness`
+        : `连接工具 ${installedManifest.version} 与 /${SKILL_NAME} 工作流已安装`
       : pluginInstalled
         ? `知识工具已安装，尚缺 /${SKILL_NAME} 工作流`
         : manifest.name ? '尚未安装 SpecFlow Harness 集成组件' : '未检测到 DeepSeek Harness Studio 配置'

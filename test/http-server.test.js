@@ -1,6 +1,9 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
 const { createHttpServer } = require('../src/http-server');
 
@@ -88,6 +91,33 @@ test('limits external search to the requested document group', async t => {
   assert.equal(body.data.groupId, 'grp_fire');
   assert.deepEqual(searchOptions, { topK: 6, docIds: ['doc_fire_1', 'doc_fire_2'] });
   assert.equal(body.data.hits[0].docId, 'doc_fire_1');
+});
+
+test('hands a Harness citation link to the running SpecFlow desktop listener', async t => {
+  const service = Object.assign(fakeService(), { get: id => id === 'doc_test' ? { id, title: '测试规范' } : null });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const opened = new Promise(resolve => server.once('specflow:open-citation', resolve));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/open/citation?doc=doc_test&page=9&item=p9-i2&ref=5.2.7&bbox=1,2,3,4&nbbox=.1,.2,.3,.4`);
+  const payload = await opened;
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /已发送到 SpecFlow/);
+  assert.deepEqual(payload, { docId: 'doc_test', page: 9, itemId: 'p9-i2', ref: '5.2.7', bbox: [1, 2, 3, 4], bboxNormalized: [0.1, 0.2, 0.3, 0.4] });
+});
+
+test('serves PDF bytes with cache disabled so reparsed content cannot stay stale', async t => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'specflow-pdf-cache-'));
+  const source = path.join(root, 'source.pdf');
+  fs.writeFileSync(source, Buffer.from('%PDF-test'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const service = Object.assign(fakeService(), { get: () => ({ id: 'doc_test' }), paths: () => ({ source }) });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/api/pdf?id=doc_test`);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.equal(Buffer.from(await response.arrayBuffer()).toString(), '%PDF-test');
 });
 
 test('exposes project templates, project creation and checklist updates', async t => {

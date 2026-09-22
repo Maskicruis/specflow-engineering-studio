@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-70%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-77%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -19,7 +19,8 @@
 - **可扩展设计工具**：`Ctrl+Alt+C` 调用用户配置的多功能计算器，`Ctrl+Alt+R` 打开坡度设计器；外部工具只登记路径，不把第三方程序复制进 Release。
 - **DeepSeek 余额**：桌面标题栏读取当前用户 DeepSeek Harness 的凭据并查询官方余额接口；密钥不会返回界面、日志或写入仓库。
 - **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
-- **外部 Harness 连接**：不再启动第二套 DSH 服务，也不再占用 Harness 端口；一键向 DeepSeek Harness Studio 安装 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask` 工具。
+- **外部 Harness 连接**：不再启动第二套 DSH 服务，也不再占用 Harness 端口；一键安装四个知识工具。Harness 回答中的“打开 SpecFlow 原文”链接会唤醒已经运行的 SpecFlow，并直接定位、高亮对应页。
+- **语义查询规划与追问**：在检索前把工程口语扩展为规范术语，例如把“综合楼”关联到“民用建筑群、民用建筑、公共建筑”等表达；当用途、高度、生产储存内容或相邻建筑信息不足时，先要求补充条件，再给出防火间距或危险性分类结论。
 - **自动服务发现**：SpecFlow 启动时向当前用户的 DSH 目录写入本机回环地址，Harness 工具可自动适配自定义端口或端口回退。
 - **独立模型运行**：无需打开 Harness。直接配置任意 OpenAI 兼容的 DeepSeek、Ollama、vLLM 或其他模型，即可使用智能问答、仅资料库和通用对话。
 - **完整工程助手**：像通用大模型客户端一样连续对话；可选“智能问答”“仅资料库”“通用对话”，资料不足时不再让整套系统失去通用问答能力。
@@ -27,8 +28,8 @@
 - **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模；通过明确的应用内对话框新建、重命名和删除文件分组，并支持逐文档归组。
 - **分组问答**：问答范围可选择全部文档、指定分组、未分组或单个文档；空分组不会意外回退到全库检索。
 - **MinerU 精准解析**：按真实阅读顺序输出 Markdown/结构化内容，保留表格、图片、页码和页内坐标。
-- **引用与原文核查**：引用编号在相关句子后直接显示为超链接，回答末尾另列“文档名 + 页码 + 条文号 + 打开原文”链接；点击后直接跳回 PDF 对应页并高亮命中区域。
-- **完整 PDF 阅读器**：自动适合页面，阅读器避开原生标题栏，顶部和工具栏均保留关闭入口。
+- **引用与原文核查**：引用编号在相关句子后直接显示为超链接，回答末尾另列“文档名 + 页码 + 条文号 + 打开原文”链接；SpecFlow 与 Harness 中的链接都可回到桌面阅读器并高亮。
+- **完整 PDF 阅读器**：自动适合页面，禁用陈旧 PDF 缓存；连续点击引用时隔离加载任务，显示明确加载状态，并可在失败后原位重试。
 - **混合检索**：默认本地 BM25；配置向量模型后自动使用 BM25 + 向量 RRF 融合。
 - **标准接口**：提供版本化 API、能力发现、Schema、SSE 流式问答和结构化条目导出。
 - **客户端更新**：在“设置 → 软件更新”检查、下载并安装 GitHub Release；安装包必须通过 SHA-256 校验。
@@ -55,12 +56,12 @@
 1. 打开“设置 → 模型接口”，填写 OpenAI 兼容 Base URL、模型名和 API Key；如只使用本地检索，可以跳过。
 2. 在“设计助手”中选择项目根目录并填写项目名，创建标准目录；随后用全过程清单持续记录已收资料、缺项和责任备注。
 3. 在“资料与解析”中选择文档数据库目录和 `mineru.exe`，保存后点击“检测”。
-4. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新集成组件”，然后重启一次 DeepSeek Harness Studio。
+4. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”确认组件版本与当前 SpecFlow 一致；如显示旧版本，点击“更新至当前版本”，然后完全退出并重启 DeepSeek Harness Studio。
 5. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
 6. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
 7. 在“文档数据库 → 规范动态监测”登记规范发布网站并选择检查周期。后台计划任务仅在 SpecFlow 服务运行期间执行，也可随时点击“全部立即检查”。
 8. 在“设计工具”中调用计算器；道路坡度设计先插入控制节点，再双击节点按指定方向扩展。选中坡段填写真实距离与设计坡度，至少设置一个已知控制标高后计算网络。
-9. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
+9. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通问题由 Agent 调用 `specflow_search`。若返回 `clarify_user`，Harness 会先追问必要工程条件，再重新检索。回答后的原文链接会打开已运行的 SpecFlow。
 10. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，工程项目、对话、分组和资料库不会被删除。
 
 ## 独立运行与 Agent 接入
@@ -94,7 +95,7 @@ POST  /api/v1/export/items
 PATCH /api/v1/settings
 ```
 
-响应采用统一成功/错误封装；请求支持 `retrievalMode: auto|knowledge|general`、`conversationId`、多轮 `history`、`groupId` 和 `docIds`。引用包含文档 ID、页码、条文号、PDF 点坐标 `bbox` 与稳定的 `bboxNormalized`，适合被 Agent 消费并回溯证据。
+响应采用统一成功/错误封装；请求支持 `retrievalMode: auto|knowledge|general`、`conversationId`、多轮 `history`、`groupId` 和 `docIds`。检索与问答响应同时返回 `queryPlan`；信息不足时 `mode=clarification`。引用包含桌面唤醒链接、原始 PDF 链接、页码、条文号和高亮坐标。
 
 ## 数据与隐私
 
@@ -119,4 +120,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.1 发布说明](docs/RELEASE_NOTES_0.9.1_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.2 发布说明](docs/RELEASE_NOTES_0.9.2_CN.md)

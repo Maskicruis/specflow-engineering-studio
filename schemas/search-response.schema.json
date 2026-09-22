@@ -25,6 +25,10 @@
         "query": {
           "type": "string"
         },
+        "queryPlan": {
+          "type": "object",
+          "description": "术语扩展、规范表达解释及需要向用户追问的歧义信息"
+        },
         "hits": {
           "type": "array",
           "items": {

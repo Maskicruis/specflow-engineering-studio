@@ -106,6 +106,17 @@ function send(channel, payload) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
 }
 
+function openCitationInMain(payload = {}) {
+  if (!mainWindow || mainWindow.isDestroyed() || !payload.docId) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+  const script = `openCitation(${JSON.stringify(String(payload.docId))},${Math.max(1, Number(payload.page) || 1)},${JSON.stringify(String(payload.ref || ''))},${JSON.stringify(payload.bbox || '')},${JSON.stringify(payload.bboxNormalized || '')},${JSON.stringify(String(payload.itemId || ''))})`;
+  const execute = () => mainWindow && !mainWindow.isDestroyed() && mainWindow.webContents.executeJavaScript(script).catch(error => console.warn('Unable to open citation:', error.message || String(error)));
+  if (mainWindow.webContents.isLoadingMainFrame()) mainWindow.webContents.once('did-finish-load', execute);
+  else execute();
+}
+
 function registerIpc() {
   ipcMain.on('window:minimize', () => mainWindow?.minimize());
   ipcMain.on('window:toggle-maximize', () => {
@@ -269,6 +280,7 @@ else {
     updater.on('status', status => send('updates:status', status));
     registerIpc();
     const runtime = await startBackend();
+    backend.server.on('specflow:open-citation', openCitationInMain);
     createMainWindow(runtime.url);
   }).catch(error => {
     dialog.showErrorBox('SpecFlow 启动失败', error && error.message ? error.message : String(error));

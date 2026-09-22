@@ -14,9 +14,11 @@
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| GET | `/api/v1/search?q=&topK=&doc=` | BM25 检索，返回带 `page/itemId/ref/bbox` 的命中 |
+| GET | `/api/v1/search?q=&topK=&doc=` | 查询规划 + 检索，返回 `queryPlan` 与带定位链接的命中 |
 | POST | `/api/v1/ask` | 问答：`{question, scenario, retrievalMode, conversationId?, history?, topK?, docIds?, groupId?}` |
 | POST | `/api/v1/ask/stream` | SSE 流式问答：事件 `citations` → `delta*` → `done` → `saved` |
+
+检索前会返回 `queryPlan`：其中 `expandedTerms` 是补充的规范术语；`needsClarification=true` 时，调用方应先向用户询问 `clarification.questions`，再把原问题与回答合并后重新检索。例如“综合楼”会扩展为“民用建筑群、民用建筑、公共建筑”等术语，但在确定防火间距或火灾危险性分类前仍需用途、高度、生产储存内容和相邻建筑条件。
 
 `/api/v1/ask` 响应（节选）：
 
@@ -38,6 +40,8 @@
         "matched": ["bm25", "vector"],
         "bbox": [110, 555, 318, 570],
         "bboxNormalized": [0.185, 0.32, 0.535, 0.34],
+        "sourceUrl": "/open/citation?doc=doc_…&page=40&item=…",
+        "rawSourceUrl": "/api/v1/documents/doc_…/source#page=40",
         "locate": { "docId": "doc_…", "page": 40, "itemId": "p0040-i000123", "bbox": [110, 555, 318, 570], "bboxNormalized": [0.185, 0.32, 0.535, 0.34] } }
     ]
   }
@@ -53,6 +57,7 @@
 - `conversationId`：继续已有会话；未显式传 `history` 时，服务端会自动恢复该会话最近的多轮上下文；
 - `groupId`：只检索指定文档分组。传空字符串表示“未分组”；指定空分组会返回无命中，不会退化成全库搜索；
 - `docIds`：只检索指定文档；与 `groupId` 同时出现时以 `docIds` 为准。
+- `mode=clarification`：问题包含无法直接映射为规范分类的表达，当前轮只返回追问，不调用模型给出工程结论；会话下一轮会结合历史问题和补充信息重新规划检索。
 
 ## 最近对话
 
@@ -102,7 +107,7 @@
 
 ## 与设计流程 / 其它系统联动（预留）
 
-1. **定位跳转**：拿 `citations[].locate`（docId + page + itemId + bbox + bboxNormalized）即可在任意阅读器中打开原 PDF 并高亮该块；优先使用左上原点的归一化坐标，避免解析页尺寸与实际 PDF 点尺寸存在偏差；
+1. **定位跳转**：`citations[].sourceUrl` 是本机 HTTP 唤醒链接；从 Harness 点击后会激活已运行的 SpecFlow，并按 `locate`（docId + page + itemId + bbox + bboxNormalized）打开、高亮原文。`rawSourceUrl` 用于只读取原 PDF；
 2. **结构化条目**：`POST /api/v1/export/items` `{docId, itemIds?}` → `item-cards`（含 `ref` 条文号、文本/表格 HTML、`locate`），可直接喂给设计流程做参数核查或生成「规范条目卡片」；
 3. **会话回溯**：`GET /api/v1/conversations` / `/{id}`，回答与引用可审计；
 4. **能力发现**：外部系统启动时读 `/api/v1/capabilities` 决定是否启用问答/导出。

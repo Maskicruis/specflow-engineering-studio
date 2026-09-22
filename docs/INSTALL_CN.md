@@ -6,7 +6,7 @@
 
 ## 首次启动必须完成的配置
 
-SpecFlow v0.9.1 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
+SpecFlow v0.9.2 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
 
 1. 安装并确认 MinerU 可在本机运行；
 2. 打开 SpecFlow 右上角“设置”；
@@ -38,7 +38,9 @@ SpecFlow v0.9.1 包含独立 Node.js 运行时，不要求系统预装 Node.js�
 3. 点击“安装 / 更新集成组件”；
 4. 完全退出并重新启动 DeepSeek Harness Studio。
 
-Harness 中会新增 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask`，并安装 `/specflow-design-review` 本地 Skill。日常使用可直接输入：
+每次升级 SpecFlow 后，请打开“设置 → Harness 连接”确认连接组件版本。若安装的是旧组件，页面会显示“请更新到当前版本”；点击更新并重启 Harness。仅覆盖安装 SpecFlow 不会静默修改正在运行的 Harness 进程。
+
+Harness 中会新增 `specflow_status`、`specflow_list_groups`、`specflow_search` 和 `specflow_ask`，并安装 `/specflow-design-review` 本地 Skill。`specflow_search` 会先规划查询：自动补充规范术语，信息不足时返回追问问题；回答中的链接可以唤醒已打开的 SpecFlow 并定位原文。日常使用可直接输入：
 
 ```text
 /specflow-design-review C:\项目\初步设计.docx
@@ -53,7 +55,7 @@ Skill 会自动检测 SpecFlow、选择相关规范分组、分主题检索、�
 Release 附带 `SHA256SUMS.txt`。PowerShell 可用以下命令核对：
 
 ```powershell
-Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.1-x64.exe -Algorithm SHA256
+Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.2-x64.exe -Algorithm SHA256
 ```
 
 输出应与 `SHA256SUMS.txt` 对应行一致。

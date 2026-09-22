@@ -1,7 +1,7 @@
 ---
 name: specflow-design-review
 description: Review or revise a preliminary engineering design document against standards stored in SpecFlow. Use when the user asks for specification compliance checking, clause-by-clause review, engineering document revision, or a cited review report.
-version: 0.9.1
+version: 0.9.2
 ---
 
 # SpecFlow engineering design review
@@ -20,6 +20,8 @@ The text after the command may also name a SpecFlow group, limit the review to c
 - Every technical correction must be supported by a returned SpecFlow source. If evidence is absent or conflicting, mark the item `需要人工复核`.
 - Prefer `specflow_search`; do not call `specflow_ask` unless the user explicitly asks the SpecFlow standalone model to draft the answer.
 - Keep document titles, pages, clauses, `sourceUrl`, and locate metadata from tool results intact.
+- If `specflow_search` returns `action: clarify_user`, stop the review conclusion, ask the returned questions, and repeat the search with the original topic plus the user's answers.
+- Put each returned `markdownLink` immediately after the sentence or matrix row it supports so clicking it opens the running SpecFlow reader.
 
 ## Workflow
 
@@ -32,6 +34,8 @@ The text after the command may also name a SpecFlow group, limit the review to c
 4. Read the target document using `read_document` when available. Otherwise use an available safe local file-reading tool. For a PDF or DOCX that cannot be read, explain which reader capability is missing instead of pretending it was read.
 5. Build a review inventory by chapter. Extract design claims that can be checked: scope, design basis, mandatory provisions, dimensions, capacities, loads, clearances, materials, fire protection, electrical, drainage, roads, operation and maintenance requirements.
 6. Search SpecFlow in small evidence-focused batches. For each topic, call `specflow_search` with the selected `group_id`, a specific query, and `top_k` between 8 and 12. Do not use one broad query for the entire document.
+   - SpecFlow expands informal engineering expressions into specification terminology. Do not remove the returned canonical terms.
+   - When the tool requests clarification, ask before continuing; for example, “综合楼” may require uses, height, production/storage content, and adjacent-building information before fire classification or separation can be determined.
 7. Compare each design claim with the retrieved clauses and classify it:
    - `符合` — the design text satisfies the cited requirement;
    - `需修改` — the design text conflicts with or omits a cited requirement;

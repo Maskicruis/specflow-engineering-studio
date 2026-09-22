@@ -68,7 +68,11 @@
     },
     "sourceUrl": {
       "type": "string",
-      "description": "可直接打开原 PDF 对应页的相对 URL；应用内点击时进入高亮阅读器"
+      "description": "打开 SpecFlow 并定位、高亮该引用的相对 URL"
+    },
+    "rawSourceUrl": {
+      "type": "string",
+      "description": "直接读取原 PDF 的相对 URL"
     },
     "bbox": {
       "oneOf": [

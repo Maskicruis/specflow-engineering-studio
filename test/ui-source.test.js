@@ -27,6 +27,10 @@ test('viewer contains the compatibility fallback and aligned overlay wrapper', (
   assert.match(html, /function fitPage/);
   assert.match(html, /page\.view/);
   assert.match(html, /hlNormalized/);
+  assert.match(html, /loadVersion/);
+  assert.match(html, /cache:'no-store'/);
+  assert.match(html, /retryViewer/);
+  assert.match(html, /openCitationFromLocation/);
   assert.match(html, /top:45px;z-index:300/);
   assert.match(html, /关闭阅读器/);
 });

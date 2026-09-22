@@ -71,6 +71,18 @@ function sendBuffer(response, buffer, contentType) {
   response.end(buffer);
 }
 
+function sendHtml(response, status, html) {
+  const buffer = Buffer.from(String(html || ''), 'utf8');
+  response.writeHead(status, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': buffer.length,
+    'Cache-Control': 'no-store',
+    Pragma: 'no-cache',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  response.end(buffer);
+}
+
 function getEmbeddedAsset(key) {
   if (!runningAsSea || !sea.getAssetKeys().includes(key)) return null;
   return Buffer.from(sea.getRawAsset(key));
@@ -142,14 +154,20 @@ function sendFile(request, response, file, contentType) {
       'Content-Type': contentType,
       'Content-Length': end - start + 1,
       'Content-Range': `bytes ${start}-${end}/${stat.size}`,
-      'Accept-Ranges': 'bytes'
+      'Accept-Ranges': 'bytes',
+      'Cache-Control': 'no-store',
+      Pragma: 'no-cache',
+      'X-Content-Type-Options': 'nosniff'
     });
     return fs.createReadStream(file, { start, end }).pipe(response);
   }
   response.writeHead(200, {
     'Content-Type': contentType,
     'Content-Length': stat.size,
-    'Accept-Ranges': 'bytes'
+    'Accept-Ranges': 'bytes',
+    'Cache-Control': 'no-store',
+    Pragma: 'no-cache',
+    'X-Content-Type-Options': 'nosniff'
   });
   return fs.createReadStream(file).pipe(response);
 }
@@ -182,6 +200,30 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const filename = path.basename(pathname);
         if (!['workspace.js', 'workspace.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
+      }
+
+      if (pathname === '/open/citation' && request.method === 'GET') {
+        const docId = String(url.searchParams.get('doc') || '');
+        if (!docId || !service.get(docId)) throw new HttpError(404, '引用文档不存在', 'NOT_FOUND');
+        const parseCoordinates = name => {
+          const values = String(url.searchParams.get(name) || '').split(',').map(Number);
+          return values.length >= 4 && values.slice(0, 4).every(Number.isFinite) ? values.slice(0, 4) : null;
+        };
+        const payload = {
+          docId,
+          page: Math.max(1, Number(url.searchParams.get('page')) || 1),
+          itemId: String(url.searchParams.get('item') || ''),
+          ref: String(url.searchParams.get('ref') || ''),
+          bbox: parseCoordinates('bbox'),
+          bboxNormalized: parseCoordinates('nbbox')
+        };
+        setImmediate(() => server.emit('specflow:open-citation', payload));
+        const fallback = new URLSearchParams({ openCitation: '1', doc: payload.docId, page: String(payload.page) });
+        if (payload.itemId) fallback.set('item', payload.itemId);
+        if (payload.ref) fallback.set('ref', payload.ref);
+        if (payload.bbox) fallback.set('bbox', payload.bbox.join(','));
+        if (payload.bboxNormalized) fallback.set('nbbox', payload.bboxNormalized.join(','));
+        return sendHtml(response, 200, '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>正在打开 SpecFlow</title><style>body{margin:0;background:#0d0f12;color:#e8ebf2;font:14px system-ui;display:grid;place-items:center;min-height:100vh}.card{max-width:520px;padding:28px;border:1px solid #303746;border-radius:16px;background:#171a20;text-align:center}a{color:#86aaff}</style><div class="card"><h2>已发送到 SpecFlow</h2><p>原文定位已发送到正在运行的 SpecFlow Engineering Studio。</p><p>如果桌面窗口没有响应，请确认 SpecFlow 正在运行，或<a href="/?' + fallback.toString() + '">在浏览器中打开</a>。</p></div><script>setTimeout(function(){window.close()},900)</script>');
       }
 
       // Stable, versioned interface for agents and external schedulers.
@@ -280,7 +322,10 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const doc = url.searchParams.get('doc');
         const hasGroup = url.searchParams.has('group');
         const docIds = doc ? [doc] : hasGroup ? service.resolveDocumentIds({ groupId: url.searchParams.get('group') }) : null;
-        return success(response, { query: q, groupId: hasGroup ? url.searchParams.get('group') : null, hits: service.search(q, { topK, docIds }) });
+        const result = typeof service.searchWithPlan === 'function'
+          ? service.searchWithPlan(q, { topK, docIds })
+          : { query: q, queryPlan: null, hits: service.search(q, { topK, docIds }) };
+        return success(response, Object.assign({ groupId: hasGroup ? url.searchParams.get('group') : null }, result));
       }
       if (pathname === '/api/v1/ask' && request.method === 'POST') {
         const body = await readJsonBody(request);

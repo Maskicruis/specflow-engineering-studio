@@ -54,7 +54,8 @@ test('结构化条目导出：卡片带条文号与定位坐标', () => {
   assert.equal(first.ref, '12.2.7');
   assert.deepEqual(first.locate.bbox, [110, 555, 318, 570]);
   assert.deepEqual(first.locate.bboxNormalized, [0.18, 0.32, 0.54, 0.34]);
-  assert.match(first.sourceUrl, /\/source#page=1$/);
+  assert.match(first.sourceUrl, /^\/open\/citation\?/);
+  assert.match(first.rawSourceUrl, /\/source#page=1$/);
 });
 
 test('混合检索：配置 embedding 后 BM25+向量 RRF 融合', async () => {

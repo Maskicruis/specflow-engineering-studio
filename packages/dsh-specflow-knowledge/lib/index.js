@@ -39,6 +39,10 @@ function withAbsoluteSources(value, baseUrl) {
   if (Array.isArray(value)) return value.map(item => withAbsoluteSources(item, baseUrl))
   const copy = { ...value }
   if (typeof copy.sourceUrl === 'string' && copy.sourceUrl.startsWith('/')) copy.sourceUrl = baseUrl + copy.sourceUrl
+  if (typeof copy.rawSourceUrl === 'string' && copy.rawSourceUrl.startsWith('/')) copy.rawSourceUrl = baseUrl + copy.rawSourceUrl
+  if (typeof copy.sourceUrl === 'string' && /^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\//i.test(copy.sourceUrl)) {
+    copy.markdownLink = `[打开 SpecFlow 原文 · 第 ${Math.max(1, Number(copy.page) || 1)} 页](${copy.sourceUrl})`
+  }
   for (const [key, item] of Object.entries(copy)) {
     if (key !== 'sourceUrl' && item && typeof item === 'object') copy[key] = withAbsoluteSources(item, baseUrl)
   }
@@ -82,7 +86,7 @@ export function apply(ctx, config) {
   ctx.systemPrompt.section({
     name: 'tool:specflow-knowledge',
     order: 111,
-    text: 'Use specflow_search for questions about the user\'s imported engineering standards, specifications, drawings, clauses, tables, and design parameters. Call specflow_list_groups when the user names a project or discipline. Preserve each returned document title, page, clause reference, sourceUrl, and locate data; never invent citations. Prefer specflow_search and synthesize the answer yourself. Use specflow_ask only when the user explicitly wants the standalone SpecFlow model to answer.'
+    text: 'Use specflow_search for questions about the user\'s imported engineering standards, specifications, drawings, clauses, tables, and design parameters. Call specflow_list_groups when the user names a project or discipline. If specflow_search returns action=clarify_user, do not answer the engineering conclusion: ask the listed clarification questions first, then call specflow_search again with the original question and the user\'s answers combined. Preserve every returned document title, page, clause reference, sourceUrl, locate data, and markdownLink; never invent citations. In the final answer, append each relevant markdownLink immediately after the supported sentence so the user can open the already-running SpecFlow reader. Prefer specflow_search and synthesize the answer yourself. Use specflow_ask only when the user explicitly wants the standalone SpecFlow model to answer.'
   })
 
   register(ctx, {
@@ -110,7 +114,7 @@ export function apply(ctx, config) {
 
   register(ctx, {
     name: 'specflow_search',
-    description: 'Search the local SpecFlow engineering document database. Returns grounded excerpts with PDF page, clause, coordinates, and clickable source URLs.',
+    description: 'Plan and search the local SpecFlow engineering document database. It expands engineering terminology, may require a clarification follow-up, and returns grounded excerpts with clickable links that open the running SpecFlow reader.',
     parameters: {
       query: { type: 'string', required: true, description: 'Engineering question, clause, parameter, or keyword to search for.' },
       top_k: { type: 'number', description: 'Number of results, 1-20. Defaults to 8.' },
@@ -125,7 +129,25 @@ export function apply(ctx, config) {
       if (args.group_id !== undefined) search.set('group', String(args.group_id))
       if (args.document_id) search.set('doc', String(args.document_id))
       const result = await requestJson(config, `/api/v1/search?${search}`, {}, exec.signal)
-      return { baseUrl: result.baseUrl, ...result.data }
+      const data = result.data || {}
+      if (data.queryPlan?.needsClarification) {
+        return {
+          action: 'clarify_user',
+          doNotAnswer: true,
+          originalQuery: query,
+          interpretations: data.queryPlan.interpretations || [],
+          expandedTerms: data.queryPlan.expandedTerms || [],
+          reason: data.queryPlan.clarification?.reason || '',
+          questions: data.queryPlan.clarification?.questions || [],
+          instruction: 'Ask the user these questions. After the user answers, call specflow_search again with the original question plus the answers in one specific query.'
+        }
+      }
+      return {
+        action: 'answer_with_sources',
+        citationInstruction: 'Append the returned markdownLink immediately after every sentence supported by that source.',
+        baseUrl: result.baseUrl,
+        ...data
+      }
     },
     presentCall: args => ({ card: 'generic', title: `Search SpecFlow: ${args.query}`, kind: 'read' })
   })
@@ -148,7 +170,11 @@ export function apply(ctx, config) {
       if (args.document_id) payload.docIds = [String(args.document_id)]
       if (args.conversation_id) payload.conversationId = String(args.conversation_id)
       const result = await requestJson(config, '/api/v1/ask', { method: 'POST', body: JSON.stringify(payload) }, exec.signal)
-      return { baseUrl: result.baseUrl, ...result.data }
+      const data = result.data || {}
+      if (data.needsClarification || data.mode === 'clarification') {
+        return { action: 'clarify_user', doNotAnswer: true, baseUrl: result.baseUrl, ...data }
+      }
+      return { action: 'answer_with_sources', citationInstruction: 'Keep each citation markdownLink next to the supported sentence.', baseUrl: result.baseUrl, ...data }
     },
     presentCall: args => ({ card: 'generic', title: `Ask SpecFlow: ${args.question}`, kind: 'read' })
   })

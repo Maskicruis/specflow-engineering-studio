@@ -46,6 +46,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 @media(max-width:1120px){.database-grid{grid-template-columns:165px minmax(0,1fr) 250px}.library-table td,.library-table th{padding:10px}}
 @media(max-width:960px){.sidebar-new-chat{width:40px;justify-content:center;padding:0}.sidebar-new-chat span,.sidebar-new-chat kbd,.recent-section{display:none}.database-grid{grid-template-columns:150px minmax(0,1fr)}.database-grid .side-stack{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}.doc-cell{min-width:170px}}
 @media(max-width:760px){.database-grid{grid-template-columns:1fr}.group-panel{min-height:220px}.database-grid .side-stack{grid-column:auto;display:flex}.recent-section{display:none}.desktop-app .settings-card[open]{top:50px;right:8px;bottom:8px;width:calc(100vw - 16px)}.settings-body{grid-template-columns:1fr}.settings-nav{border-right:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:8px}.settings-nav-label{display:none}.settings-tab{padding:7px}.settings-tab-copy small{display:none}.settings-content{padding:15px}.settings-footer{align-items:flex-start;flex-direction:column}.app-dialog{padding:14px}}
+.viewer-state{min-height:220px;display:grid;place-items:center;padding:24px;color:var(--text-3);text-align:center;line-height:1.7}.viewer-state.error{color:var(--red)}.viewer-state .btn{margin-top:12px}.pdfcol.loading .cvwrap{visibility:hidden}
 </style><link rel="stylesheet" href="/app/workspace.css"></head><body>
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 3.8h8l4 4V12M14 4v4h4M8 11h6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><ellipse cx="12" cy="15" rx="6" ry="2.4" stroke="white" stroke-width="1.5"/><path d="M6 15v3.4c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V15" stroke="white" stroke-width="1.5"/></svg></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Desktop</small></div></div>
@@ -505,7 +506,7 @@ async function loadConversations(){
   try{ var response=await api('v1/conversations?summary=1&limit=40'); CONVERSATIONS=((response.data||response).items)||[]; renderRecentConversations(); }
   catch(e){ var el=document.getElementById('recentConversations'); if(el) el.innerHTML='<div class="muted bad" style="padding:6px 10px">读取失败</div>'; }
 }
-function assistantLabel(turn){ return turn.grounding==='general'?'通用模型回答':(turn.mode==='retrieval'?'资料检索结果':'资料库增强回答'); }
+function assistantLabel(turn){ return turn.mode==='clarification'?'需要补充信息':turn.grounding==='general'?'通用模型回答':(turn.mode==='retrieval'?'资料检索结果':'资料库增强回答'); }
 async function openConversation(id){
   try{
     var response=await api('v1/conversations/'+encodeURIComponent(id)); var record=response.data||response; var turns=Array.isArray(record.turns)?record.turns:[];
@@ -545,7 +546,7 @@ async function askQuestion(){
     var r=await fetch('/api/v1/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var body=await r.json(); var d=body.data||body;
     var n=(d.citations||[]).length;
-    var label=d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
+    var label=d.mode==='clarification'?'需要补充信息':d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
     document.getElementById('qState').textContent=label+(n?' · 引用 '+n+' 条':'');
     var text=d.answer||d.note||d.error||'';
     turn.note.textContent=label; turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
@@ -586,8 +587,8 @@ async function chooseMineru(){
 function renderConnectorStatus(status){
   if(!status) return; CONNECTOR_STATUS=status;
   var state=document.getElementById('connectorState'), button=document.getElementById('installConnectorButton');
-  if(state){ state.textContent=status.message||'尚未检测'; state.className='field-help '+(status.installed?'ok':status.available?'':'bad'); }
-  if(button){ button.disabled=false; button.textContent=status.installed?'更新集成组件':'安装集成组件'; }
+  if(state){ state.textContent=status.message||'尚未检测'; state.className='field-help '+(status.updateAvailable?'bad':status.installed?'ok':status.available?'':'bad'); }
+  if(button){ button.disabled=false; button.textContent=status.updateAvailable?'更新至 '+status.bundledVersion:status.installed?'重新安装集成组件':'安装集成组件'; }
 }
 async function refreshConnector(){
   if(!DESKTOP||!DESKTOP.connector) return;
@@ -651,13 +652,24 @@ async function openCitation(docId,page,ref,bbox,bboxNormalized,itemId){
   var d=DOCS.find(function(x){return x.id===docId;});
   CUR=d||{id:docId,title:docId};
   document.getElementById('mtitle').textContent='核查原文：'+(d?d.title:docId);
-  var v=await api('view?id='+docId); CURITEMS=v.items||[]; renderMd(CURITEMS,docId);
   document.getElementById('modal').style.display='flex';
+  document.getElementById('mleft').innerHTML='<div class="muted" style="padding:20px">正在读取解析内容…</div>';
+  document.getElementById('mkw').textContent='第 '+Number(page||1)+' 页'+(ref?' · 条文 '+ref:'')+' · 正在加载原文';
+  try{ var v=await api('view?id='+docId); CURITEMS=v.items||[]; renderMd(CURITEMS,docId); }
+  catch(e){ CURITEMS=[]; document.getElementById('mleft').innerHTML='<div class="muted" style="padding:20px">解析内容加载失败：'+esc(e.message)+'</div>'; }
   var item=CURITEMS.find(function(row){return itemId&&row.id===itemId;});
   var pdfBox=bbox||(item&&item.bbox&&item.bbox.join(',')||'');
   var normalizedBox=bboxNormalized||(item&&item.bboxNormalized&&item.bboxNormalized.join(',')||'');
-  document.getElementById('mkw').textContent='第 '+Number(page||1)+' 页'+(ref?' · 条文 '+ref:'')+' · 正在定位';
   if(window.VIEWER){ try{ await window.VIEWER.load(docId,{page:Number(page),keyword:ref||'',bbox:pdfBox,normalizedBbox:normalizedBox}); }catch(e){ document.getElementById('mkw').textContent='定位失败：'+e.message; } }
+}
+function openCitationFromLocation(){
+  try{
+    var params=new URLSearchParams(location.search); if(params.get('openCitation')!=='1'||!params.get('doc')) return;
+    var bbox=params.get('bbox')||'', nbbox=params.get('nbbox')||'';
+    openCitation(params.get('doc'),Number(params.get('page')||1),params.get('ref')||'',bbox,nbbox,params.get('item')||'');
+    params.delete('openCitation'); params.delete('doc'); params.delete('page'); params.delete('ref'); params.delete('bbox'); params.delete('nbbox'); params.delete('item');
+    history.replaceState(null,'',location.pathname+(params.toString()?'?'+params.toString():'')+location.hash);
+  }catch(_){}
 }
 document.addEventListener('click',function(e){
   if(e.target && e.target.isContentEditable) return;
@@ -711,7 +723,7 @@ document.addEventListener('click',function(e){
   else if(act==='cite'){ e.preventDefault(); openCitation(t.getAttribute('data-doc'), t.getAttribute('data-pg'), t.getAttribute('data-ref'), t.getAttribute('data-bbox'), t.getAttribute('data-nbbox'), t.getAttribute('data-item')); }
   else if(act==='reparse'){ reparse(t.getAttribute('data-id')); }
   else if(act==='goto'){ var kw=t.getAttribute('data-kw')||''; var bb=t.getAttribute('data-bbox')||''; var nbb=t.getAttribute('data-nbbox')||''; document.getElementById('mkw').textContent=kw; if(window.VIEWER) window.VIEWER.goto(Number(t.getAttribute('data-pg')), kw, bb, nbb); }
-  else if(act==='close'){ document.getElementById('modal').style.display='none'; document.getElementById('vbox').innerHTML=''; }
+  else if(act==='close'){ document.getElementById('modal').style.display='none'; if(window.VIEWER)window.VIEWER.close(); else document.getElementById('vbox').innerHTML=''; }
   else if(act==='edit'){ promptEdit(t.getAttribute('data-idx')); }
   else if(act==='edittbl'){ var wrap=t.closest('.tblwrap'); var et=wrap?wrap.querySelector('.edtable'):null; if(et){ et.contentEditable='true'; et.focus(); } }
   else if(act==='fixsav'){ var wrap=t.closest('.tblwrap'); var et=wrap?wrap.querySelector('.edtable'):null; if(et){ var table=et.querySelector('table'); var cleaned=table?safeTableHtml(table.outerHTML):et.textContent; saveFix(t.getAttribute('data-idx'), cleaned); et.contentEditable='false'; } }
@@ -735,21 +747,22 @@ document.addEventListener('keydown',function(e){
   if(e.ctrlKey&&e.key==='2'){ e.preventDefault(); showPage('assistant'); return; }
   if(e.ctrlKey&&e.key==='3'){ e.preventDefault(); showPage('database'); return; }
   if(e.ctrlKey&&e.key==='4'){ e.preventDefault(); showPage('tools'); return; }
-  if(e.key!=='Escape') return; if(document.getElementById('groupDialog').style.display!=='none'){cancelGroup();return;} if(document.body.classList.contains('settings-open')){closeSettings();return;} if(document.getElementById('modal').style.display!=='none'){ document.getElementById('modal').style.display='none'; document.getElementById('vbox').innerHTML=''; }
+  if(e.key!=='Escape') return; if(document.getElementById('groupDialog').style.display!=='none'){cancelGroup();return;} if(document.body.classList.contains('settings-open')){closeSettings();return;} if(document.getElementById('modal').style.display!=='none'){ document.getElementById('modal').style.display='none'; if(window.VIEWER)window.VIEWER.close(); else document.getElementById('vbox').innerHTML=''; }
 });
 try{ showPage(localStorage.getItem('specflow-page')||'design'); }catch(e){ showPage('design'); }
 try{ selectSettingsTab(localStorage.getItem('specflow-settings-tab')||'workspace'); }catch(e){ selectSettingsTab('workspace'); }
 syncQaMode();
-initDesktop(); load(); loadConversations(); setInterval(load,2500);
+initDesktop(); load(); loadConversations(); setTimeout(openCitationFromLocation,250); setInterval(load,2500);
 </script>
 <script src="/app/road-slope-core.js"></script><script src="/app/workspace.js"></script>
 <script type="module">
 import * as pdfjs from '/lib/pdf.min.mjs';
 pdfjs.GlobalWorkerOptions.workerSrc='/lib/pdf.worker.min.mjs';
-var doc=null, curPage=1, scale=1.3, kw='', hlBbox=null, hlNormalized=null, renderVersion=0, renderTask=null;
+var doc=null, curPage=1, scale=1.3, kw='', hlBbox=null, hlNormalized=null, renderVersion=0, loadVersion=0, renderTask=null, lastLoad=null;
 var box=document.getElementById('vbox');
-function esc2(s){ return String(s||'').replace(/</g,'&lt;'); }
-function bar(){ box.innerHTML='<div class="pvbar"><button class="btn" data-act="prev" title="上一页">◀</button><button class="btn" data-act="next" title="下一页">▶</button><button class="btn" data-act="zoom-" title="缩小">－</button><button class="btn" data-act="zoom+" title="放大">＋</button><button class="btn" data-act="fit" title="完整显示当前页">适合页面</button><span class="muted" id="pg">1 / …</span><button class="btn reader-close" data-act="close">关闭阅读器</button></div><div class="cvwrap"><canvas id="cv"></canvas><div id="hl" style="position:absolute;inset:0;pointer-events:none"></div></div>'; }
+function esc2(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function bar(){ box.classList.add('loading'); box.innerHTML='<div class="pvbar"><button class="btn" data-act="prev" title="上一页">◀</button><button class="btn" data-act="next" title="下一页">▶</button><button class="btn" data-act="zoom-" title="缩小">－</button><button class="btn" data-act="zoom+" title="放大">＋</button><button class="btn" data-act="fit" title="完整显示当前页">适合页面</button><span class="muted" id="pg">正在加载 PDF…</span><button class="btn reader-close" data-act="close">关闭阅读器</button></div><div class="viewer-state" id="viewerState">正在读取 PDF 文件并准备页面…</div><div class="cvwrap"><canvas id="cv"></canvas><div id="hl" style="position:absolute;inset:0;pointer-events:none"></div></div>'; }
+function viewerState(message,error){ var state=document.getElementById('viewerState'); if(!state)return; state.className='viewer-state'+(error?' error':''); state.innerHTML=esc2(message)+(error?'<div><button class="btn" data-act="retryViewer">重新加载</button></div>':''); }
 function parseBox(value){
   var values=Array.isArray(value)?value:String(value||'').split(',');
   var result=values.map(Number); return result.length>=4&&result.slice(0,4).every(Number.isFinite)?result.slice(0,4):null;
@@ -760,13 +773,21 @@ async function fitPage(){
   scale=Math.max(.55,Math.min(2.5,availableW/base.width,availableH/base.height)); return render();
 }
 async function load(id,target){
+  var version=++loadVersion; lastLoad={id:id,target:Object.assign({},target||{})};
+  if(renderTask){ try{renderTask.cancel();}catch(_){} renderTask=null; }
+  var previous=doc; doc=null; if(previous&&previous.destroy){ Promise.resolve(previous.destroy()).catch(function(){}); }
   bar();
   try{
-    var buf=await fetch('/api/pdf?id='+id).then(function(r){ return r.arrayBuffer(); });
-    doc=await pdfjs.getDocument({data:buf}).promise;
-    target=target||{}; curPage=Math.min(doc.numPages,Math.max(1,Number(target.page)||1)); kw=target.keyword||''; hlBbox=parseBox(target.bbox); hlNormalized=parseBox(target.normalizedBbox);
+    var response=await fetch('/api/pdf?id='+encodeURIComponent(id)+'&_v='+Date.now(),{cache:'no-store'});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+    var buf=await response.arrayBuffer(); if(buf.byteLength<8) throw new Error('PDF 文件内容为空或尚未写入完成');
+    var nextDoc=await pdfjs.getDocument({data:buf}).promise;
+    if(version!==loadVersion){ try{await nextDoc.destroy();}catch(_){} return; }
+    doc=nextDoc; target=target||{}; curPage=Math.min(doc.numPages,Math.max(1,Number(target.page)||1)); kw=target.keyword||''; hlBbox=parseBox(target.bbox); hlNormalized=parseBox(target.normalizedBbox);
+    await new Promise(function(resolve){requestAnimationFrame(function(){requestAnimationFrame(resolve);});});
     await fitPage();
-  }catch(e){ box.innerHTML='<div class="muted" style="padding:20px">PDF 加载失败：'+esc2(e.message)+'</div>'; }
+    if(version!==loadVersion) return; box.classList.remove('loading'); var state=document.getElementById('viewerState'); if(state)state.remove();
+  }catch(e){ if(version!==loadVersion)return; viewerState('PDF 加载失败：'+(e&&e.message?e.message:e),true); document.getElementById('mkw').textContent='PDF 加载失败，可点击“重新加载”重试'; }
 }
 async function render(){
   if(!doc) return;
@@ -814,6 +835,7 @@ function drawHighlights(page,vp){
   }catch(e){ try{ document.getElementById('mkw').textContent=kw+' (err:'+e.message+')'; }catch(_){} }
 }
 function goto(p,k,b,normalized){ if(p&&doc) curPage=Math.min(doc.numPages,Math.max(1,p)); kw=k||''; hlBbox=parseBox(b); hlNormalized=parseBox(normalized); render(); }
+function closeViewer(){ loadVersion+=1; renderVersion+=1; if(renderTask){try{renderTask.cancel();}catch(_){} renderTask=null;} var previous=doc; doc=null; if(previous&&previous.destroy)Promise.resolve(previous.destroy()).catch(function(){}); box.classList.remove('loading'); box.innerHTML=''; }
 document.addEventListener('click',function(e){
   var t=e.target.closest?e.target.closest('[data-act]'):null; if(!t) return;
   var a=t.getAttribute('data-act');
@@ -822,6 +844,7 @@ document.addEventListener('click',function(e){
   else if(a==='zoom+'){ scale=Math.min(2.5,scale+0.2); render(); }
   else if(a==='zoom-'){ scale=Math.max(.45,scale-0.2); render(); }
   else if(a==='fit'){ fitPage(); }
+  else if(a==='retryViewer'&&lastLoad){ load(lastLoad.id,lastLoad.target); }
 });
-window.VIEWER={load:load, goto:goto};
+window.VIEWER={load:load, goto:goto, close:closeViewer};
 </script></body></html>

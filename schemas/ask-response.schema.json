@@ -32,7 +32,8 @@
             "retrieval",
             "empty",
             "unavailable",
-            "llm-error"
+            "llm-error",
+            "clarification"
           ],
           "description": "llm=模型生成；retrieval=未配 LLM 时的检索结果"
         },
@@ -59,7 +60,16 @@
         },
         "grounding": {
           "type": "string",
-          "enum": ["knowledge", "general"]
+          "enum": ["knowledge", "general", "none"]
+        },
+        "needsClarification": {
+          "type": "boolean"
+        },
+        "clarification": {
+          "type": "object"
+        },
+        "queryPlan": {
+          "type": "object"
         },
         "question": {
           "type": "string"
@@ -86,7 +96,8 @@
               "enum": [
                 "bm25",
                 "hybrid",
-                "disabled"
+                "disabled",
+                "clarification"
               ]
             },
             "embeddingModel": {

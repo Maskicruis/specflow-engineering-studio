@@ -1,6 +1,6 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "private": true,
   "description": "工程设计工作台：项目目录、全过程检查、设计工具、独立 LLM、MinerU 文档数据库与 Harness 工作流",
   "type": "commonjs",

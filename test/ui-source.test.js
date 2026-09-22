@@ -85,4 +85,9 @@ test('engineering workspace and road drainage designer are wired into the shell'
   assert.match(workspaceScript, /lastActivation/);
   assert.match(workspaceScript, /edgeDistance/);
   assert.match(slopeCore, /function calculateNetwork/);
+  assert.match(slopeCore, /function segmentNodeKeys/);
+  assert.match(slopeCore, /function normalizeSegments/);
+  assert.match(workspaceScript, /function orientSlopeNode/);
+  assert.match(html, /连接两节点/);
+  assert.doesNotMatch(workspaceScript, /road-edge-chevron/);
 });

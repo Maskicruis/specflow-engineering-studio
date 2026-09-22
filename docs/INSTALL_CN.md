@@ -6,7 +6,7 @@
 
 ## 首次启动必须完成的配置
 
-SpecFlow v0.9.0 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
+SpecFlow v0.9.1 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
 
 1. 安装并确认 MinerU 可在本机运行；
 2. 打开 SpecFlow 右上角“设置”；
@@ -26,8 +26,8 @@ SpecFlow v0.9.0 包含独立 Node.js 运行时，不要求系统预装 Node.js�
 2. 默认目录可在“设置 → 项目与工具”逐行修改，之后新建项目自动使用新模板；已有项目可点击“同步目录模板”；
 3. 全过程检查清单按“待收集 / 已具备 / 不适用”维护，备注可填写资料位置、责任人或处理意见；
 4. 多功能计算器是外部程序。默认尝试使用 `C:\Users\Administrator\Desktop\工作任务\个人工具箱\设计工具\多功能计算器.exe`，路径不同请在设置中重新选择；
-5. `Ctrl+Alt+C` 启动计算器，`Ctrl+Alt+R` 打开道路排水坡度设计器。选择“插入节点”后单击创建起点；切换到选择模式，双击节点即可按当前上/下/左/右方向继续布点并自动连线；双击连线可反向，拖动画布空白区域可框选多个节点；
-6. 画布网格和节点间视觉距离仅用于示意。请选中每条坡段输入实际距离、设计坡度及规范限值，并为至少一个节点设置已知控制标高，再点击“计算网络标高”。数据保存在本机应用浏览器存储中，也可导出 JSON。
+5. `Ctrl+Alt+C` 启动计算器，`Ctrl+Alt+R` 打开道路排水坡度设计器。选择“连续插入节点”后单击创建节点，程序会在相邻节点间逐段连线；切换到选择模式，双击节点即可按当前上/下/左/右方向继续布点。双击坡段可反向，拖动画布空白区域可框选多个节点；
+6. 每个坡段只连接两个相邻节点，并单独显示方向箭头和流动动画。选中节点可设为“分水高点”（相邻坡段全部向外）或“汇水低点”（相邻坡段全部向内）。画布网格和视觉距离仅用于示意；请为每段输入真实距离、设计坡度和规范限值，再设置至少一个已知控制标高并计算网络。
 
 安装包不会复制或分发外部计算器；若源程序被移动，需要重新选择路径。
 
@@ -53,7 +53,7 @@ Skill 会自动检测 SpecFlow、选择相关规范分组、分主题检索、�
 Release 附带 `SHA256SUMS.txt`。PowerShell 可用以下命令核对：
 
 ```powershell
-Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.0-x64.exe -Algorithm SHA256
+Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.1-x64.exe -Algorithm SHA256
 ```
 
 输出应与 `SHA256SUMS.txt` 对应行一致。

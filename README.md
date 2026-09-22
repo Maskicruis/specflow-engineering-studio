@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-68%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-70%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -15,7 +15,7 @@
 - **工程助手 / 设计助手**：设置项目名称和保存位置后，自动建立 `00工作区间`、`01初步设计`、`02施工图设计`、`03提资资料`、`04收资资料`、`05规程规范`；目录模板可在设置中增删并同步到现有项目。
 - **全过程资料完整性清单**：按项目依据、基础资料、收资与接口、初步设计、施工图准备分阶段跟踪；每项支持“待收集 / 已具备 / 不适用”、备注和完成率，内置洪水位、技术经济指标等关键提醒，也可追加自定义项目。
 - **规范网站动态监测**：在文档数据库中登记规范发布页，按 6 小时、12 小时、每天或每周自动检查；保存页面基线、规范链接与变化记录，显示新增/移除项，并拒绝本机或局域网地址。
-- **道路排水坡度网络设计**：画布只表达拓扑，不把网格当作实际距离；双击节点按上/下/左/右连续布置并自动连线，双击坡段反向，支持框选和成组移动。计算完全使用用户填写的实际距离、方向、设计坡度、已知标高与规范上下限，并报告环网冲突和未解节点。
+- **道路排水坡度网络设计**：画布只表达拓扑，不把网格当作实际距离；每条坡段只连接两个相邻节点并显示一个方向箭头，动画不会跨越中间节点。支持连续插点、双击延伸、框选移动、逐段反向，以及一键把节点设为分水高点或汇水低点。计算完全使用用户填写的实际距离、方向、设计坡度、已知标高与规范上下限。
 - **可扩展设计工具**：`Ctrl+Alt+C` 调用用户配置的多功能计算器，`Ctrl+Alt+R` 打开坡度设计器；外部工具只登记路径，不把第三方程序复制进 Release。
 - **DeepSeek 余额**：桌面标题栏读取当前用户 DeepSeek Harness 的凭据并查询官方余额接口；密钥不会返回界面、日志或写入仓库。
 - **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
@@ -119,4 +119,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.0 发布说明](docs/RELEASE_NOTES_0.9.0_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.1 发布说明](docs/RELEASE_NOTES_0.9.1_CN.md)

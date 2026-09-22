@@ -8,6 +8,7 @@ const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'ui.html'), 'utf8');
 const workspaceScript = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'workspace.js'), 'utf8');
+const slopeCore = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'road-slope-core.js'), 'utf8');
 
 test('embedded browser scripts are syntactically valid', () => {
   const scripts = [...html.matchAll(/<script(?:\s+type="module")?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
@@ -67,6 +68,7 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
 
 test('engineering workspace and road drainage designer are wired into the shell', () => {
   new vm.Script(workspaceScript);
+  new vm.Script(slopeCore);
   assert.match(html, /设计助手/);
   assert.match(html, /设计工具/);
   assert.match(html, /id="projectName"/);
@@ -77,4 +79,10 @@ test('engineering workspace and road drainage designer are wired into the shell'
   assert.match(workspaceScript, /function autoSlope/);
   assert.match(workspaceScript, /ctrlKey&&event\.altKey/);
   assert.match(workspaceScript, /DESKTOP\.balance\.get/);
+  assert.match(html, /id="specMonitorDialog"/);
+  assert.match(workspaceScript, /function loadSpecMonitors/);
+  assert.match(workspaceScript, /selectionBox/);
+  assert.match(workspaceScript, /lastActivation/);
+  assert.match(workspaceScript, /edgeDistance/);
+  assert.match(slopeCore, /function calculateNetwork/);
 });

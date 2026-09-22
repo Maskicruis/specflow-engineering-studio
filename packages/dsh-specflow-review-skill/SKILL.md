@@ -1,7 +1,7 @@
 ---
 name: specflow-design-review
 description: Review or revise a preliminary engineering design document against standards stored in SpecFlow. Use when the user asks for specification compliance checking, clause-by-clause review, engineering document revision, or a cited review report.
-version: 0.8.0
+version: 0.9.0
 ---
 
 # SpecFlow engineering design review

@@ -87,6 +87,19 @@
 
 工程接口可被 Agent 或调度器独立调用。所有目录名会去重并拒绝路径穿越；项目检查进度只统计未标记为“不适用”的项目。
 
+## 规范网站动态监测
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/spec-monitors` | 列出监测任务、状态、下次检查、规范链接与最近变化 |
+| POST | `/api/v1/spec-monitors` | 新建并可立即检查：`{name, url, intervalMinutes, keywords?, enabled?, checkNow?}` |
+| PATCH | `/api/v1/spec-monitors/:id` | 修改名称、网址、周期、关键词或启停状态 |
+| DELETE | `/api/v1/spec-monitors/:id` | 删除任务及其本地检查历史 |
+| POST | `/api/v1/spec-monitors/:id/check` | 立即检查一个任务 |
+| POST | `/api/v1/spec-monitors/check-all` | 立即检查所有启用任务（最多 3 个并发） |
+
+计划任务只在 SpecFlow 服务运行时执行；服务启动后会补查已经到期的任务。周期范围为 30 分钟至 30 天。抓取器只允许公开 HTTP/HTTPS 地址，解析 DNS 后拒绝环回、链路本地和私网目标，并在每次重定向后重新校验；单次响应限制 5 MB、超时 20 秒。页面有规范链接时以排序后的链接集合生成稳定指纹，没有链接时按正文（非文本响应按原始字节）生成指纹。
+
 ## 与设计流程 / 其它系统联动（预留）
 
 1. **定位跳转**：拿 `citations[].locate`（docId + page + itemId + bbox + bboxNormalized）即可在任意阅读器中打开原 PDF 并高亮该块；优先使用左上原点的归一化坐标，避免解析页尺寸与实际 PDF 点尺寸存在偏差；

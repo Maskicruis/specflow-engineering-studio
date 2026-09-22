@@ -16,6 +16,7 @@ const embeddings = require('./embeddings');
 const { isConfigured: llmConfigured } = require('./llm');
 const { SCENARIOS } = require('./scenarios');
 const { ProjectWorkspace } = require('./project-workspace');
+const { SpecificationMonitor } = require('./spec-monitor');
 
 const DOCUMENTS_FILE = path.join(DATA, 'documents.json');
 const GROUPS_FILE = path.join(DATA, 'document-groups.json');
@@ -52,6 +53,7 @@ class KnowledgeBaseService {
     if (!Array.isArray(this.conversations)) this.conversations = [];
     this.queue = new JobQueue({ concurrency: 1 });
     this.projectWorkspace = new ProjectWorkspace({ dataDir: DATA });
+    this.specificationMonitor = new SpecificationMonitor({ dataDir: DATA });
     this.queue.on('jobError', ({ id, error }) => this.fail(id, error));
     for (const document of this.documents.filter(item => item.status === 'queued')) {
       if (!document.inputPath && document.file) document.inputPath = path.join(INBOX, document.file);
@@ -398,6 +400,26 @@ class KnowledgeBaseService {
 
   addEngineeringChecklistItem(projectId, payload) { return this.projectWorkspace.addChecklistItem(projectId, payload); }
 
+  listSpecificationMonitors() { return this.specificationMonitor.list(); }
+
+  async createSpecificationMonitor(payload) {
+    const created = this.specificationMonitor.create(payload);
+    return payload.checkNow === false ? created : this.specificationMonitor.check(created.id);
+  }
+
+  updateSpecificationMonitor(id, patch) { return this.specificationMonitor.update(id, patch); }
+
+  deleteSpecificationMonitor(id) { return this.specificationMonitor.remove(id); }
+
+  checkSpecificationMonitor(id) { return this.specificationMonitor.check(id); }
+
+  async checkAllSpecificationMonitors() {
+    const items = await this.specificationMonitor.checkAll();
+    return { items };
+  }
+
+  shutdown() { this.specificationMonitor.stop(); }
+
   resolveDocumentIds(payload = {}) {
     if (Array.isArray(payload.docIds)) return payload.docIds.map(String);
     if (Object.prototype.hasOwnProperty.call(payload, 'groupId')) {
@@ -519,7 +541,8 @@ class KnowledgeBaseService {
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
         'citation-jump-highlight', 'inline-citation-links', 'conversation-history', 'multi-turn-chat',
         'document-groups', 'group-scoped-retrieval', 'general-llm-fallback', 'item-export',
-        'engineering-project-workspace', 'project-folder-templates', 'design-completeness-checklist'
+        'engineering-project-workspace', 'project-folder-templates', 'design-completeness-checklist',
+        'scheduled-specification-monitoring', 'specification-link-change-detection'
       ],
       retrieval: { default: 'bm25', hybrid: embeddings.isConfigured(this.settings.llm) ? 'available' : 'requires embeddingModel' },
       schemas: {
@@ -541,6 +564,10 @@ class KnowledgeBaseService {
         { method: 'POST', path: '/api/v1/projects', desc: '创建工程项目及标准目录' },
         { method: 'GET', path: '/api/v1/projects/:id', desc: '工程项目与全过程检查清单' },
         { method: 'PATCH', path: '/api/v1/projects/:id/checklist/:itemId', desc: '更新资料完整性检查项' },
+        { method: 'GET/POST', path: '/api/v1/spec-monitors', desc: '规范网站监测列表与创建' },
+        { method: 'PATCH/DELETE', path: '/api/v1/spec-monitors/:id', desc: '更新或删除规范网站监测项' },
+        { method: 'POST', path: '/api/v1/spec-monitors/:id/check', desc: '立即检查指定规范网站' },
+        { method: 'POST', path: '/api/v1/spec-monitors/check-all', desc: '立即检查所有启用的规范网站' },
         { method: 'POST', path: '/api/v1/export/items', desc: '导出结构化条目卡片（联动预留）' },
         { method: 'GET', path: '/api/v1/documents/:id/content', desc: 'canonical 文档' },
         { method: 'GET', path: '/api/v1/documents/:id/source', desc: '原 PDF' }
@@ -627,6 +654,7 @@ class KnowledgeBaseService {
       retrieval: { default: 'bm25', hybrid: embeddings.isConfigured(this.settings.llm) ? 'available' : 'requires embeddingModel' },
       conversations: this.conversations.length,
       projects: this.projectWorkspace.projects.length,
+      specificationMonitors: this.specificationMonitor.items.length,
       index: { entries: this.rag.loaded, documents: this.rag.docs.length },
       queue: this.queue.snapshot()
     };

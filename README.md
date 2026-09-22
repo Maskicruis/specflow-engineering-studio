@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-62%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-68%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -14,7 +14,8 @@
 
 - **工程助手 / 设计助手**：设置项目名称和保存位置后，自动建立 `00工作区间`、`01初步设计`、`02施工图设计`、`03提资资料`、`04收资资料`、`05规程规范`；目录模板可在设置中增删并同步到现有项目。
 - **全过程资料完整性清单**：按项目依据、基础资料、收资与接口、初步设计、施工图准备分阶段跟踪；每项支持“待收集 / 已具备 / 不适用”、备注和完成率，内置洪水位、技术经济指标等关键提醒，也可追加自定义项目。
-- **道路排水坡度设计**：Visio 式节点与箭头画布；从高点向低点连接排水方向，按坡长与坡度自动推算节点设计标高，支持标高小数位、箭头反向、节点拖动、坡段结果表和 JSON 导出。
+- **规范网站动态监测**：在文档数据库中登记规范发布页，按 6 小时、12 小时、每天或每周自动检查；保存页面基线、规范链接与变化记录，显示新增/移除项，并拒绝本机或局域网地址。
+- **道路排水坡度网络设计**：画布只表达拓扑，不把网格当作实际距离；双击节点按上/下/左/右连续布置并自动连线，双击坡段反向，支持框选和成组移动。计算完全使用用户填写的实际距离、方向、设计坡度、已知标高与规范上下限，并报告环网冲突和未解节点。
 - **可扩展设计工具**：`Ctrl+Alt+C` 调用用户配置的多功能计算器，`Ctrl+Alt+R` 打开坡度设计器；外部工具只登记路径，不把第三方程序复制进 Release。
 - **DeepSeek 余额**：桌面标题栏读取当前用户 DeepSeek Harness 的凭据并查询官方余额接口；密钥不会返回界面、日志或写入仓库。
 - **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
@@ -57,9 +58,10 @@
 4. 如需从 DeepSeek Harness Studio 调用，在“设置 → Harness 连接”点击“安装 / 更新集成组件”，然后重启一次 DeepSeek Harness Studio。
 5. 在“文档数据库”页创建项目或专业分组，把已有文件归组；导入新 PDF 时也可以直接指定目标分组。
 6. 在“知识库问答”中选择智能问答、仅资料库或通用对话，并在范围菜单中选择全部文档、指定分组或单个文档。点击正文引用或文后“打开原文”链接即可核查 PDF 并高亮。
-7. 在“设计工具”中调用计算器，或布置道路排水节点和箭头、设置坡度及控制标高后自动计算。
-8. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
-9. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，工程项目、对话、分组和资料库不会被删除。
+7. 在“文档数据库 → 规范动态监测”登记规范发布网站并选择检查周期。后台计划任务仅在 SpecFlow 服务运行期间执行，也可随时点击“全部立即检查”。
+8. 在“设计工具”中调用计算器；道路坡度设计先插入控制节点，再双击节点按指定方向扩展。选中坡段填写真实距离与设计坡度，至少设置一个已知控制标高后计算网络。
+9. 在 DeepSeek Harness 对话中输入 `/specflow-design-review C:\项目\初步设计.docx` 启动完整审查；普通工程资料问题仍可由 Agent 直接调用 `specflow_search`。
+10. 后续版本可在“设置 → 软件更新”中直接检查、下载和覆盖安装，工程项目、对话、分组和资料库不会被删除。
 
 ## 独立运行与 Agent 接入
 
@@ -83,6 +85,9 @@ GET   /api/v1/workspace
 PATCH /api/v1/workspace
 POST  /api/v1/projects
 PATCH /api/v1/projects/:id/checklist/:itemId
+GET   /api/v1/spec-monitors
+POST  /api/v1/spec-monitors
+POST  /api/v1/spec-monitors/check-all
 GET   /api/v1/documents/:id/content
 GET   /api/v1/documents/:id/source
 POST  /api/v1/export/items
@@ -110,6 +115,8 @@ npm run desktop
 npm run build:desktop
 ```
 
-`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。自动化验证覆盖 Harness 工具与审查 Skill 安装、无内置 Harness 运行时、独立 LLM、分组检索、Codex 式最近对话、文件分组、更新校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、引用定位和标准接口。
+`npm run build:desktop` 会先准备独立 Node.js 运行时，再生成 Windows x64 安装版和便携版。自动化验证覆盖 Harness 工具与审查 Skill 安装、无内置 Harness 运行时、独立 LLM、分组检索、Codex 式最近对话、文件分组、规范网站监测安全边界与变化检测、道路网络标高传播与冲突校验、更新校验、解析顺序、连续文本块合并、表格、坐标、三种问答模式、引用定位和标准接口。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.8.0 发布说明](docs/RELEASE_NOTES_0.8.0_CN.md)
+道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
+
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.0 发布说明](docs/RELEASE_NOTES_0.9.0_CN.md)

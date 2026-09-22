@@ -180,7 +180,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       }
       if (pathname.startsWith('/app/')) {
         const filename = path.basename(pathname);
-        if (!['workspace.js', 'workspace.css'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
+        if (!['workspace.js', 'workspace.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
 
@@ -256,6 +256,16 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       if (projectChecklist && request.method === 'POST') return success(response, service.addEngineeringChecklistItem(decodeURIComponent(projectChecklist[1]), await readJsonBody(request)), 201);
       let projectChecklistItem = pathname.match(/^\/api\/v1\/projects\/([^/]+)\/checklist\/([^/]+)$/);
       if (projectChecklistItem && request.method === 'PATCH') return success(response, service.updateEngineeringChecklist(decodeURIComponent(projectChecklistItem[1]), decodeURIComponent(projectChecklistItem[2]), await readJsonBody(request)));
+
+      // 文档数据库：定时监测指定网站上的规范发布与链接变化。
+      if (pathname === '/api/v1/spec-monitors' && request.method === 'GET') return success(response, service.listSpecificationMonitors());
+      if (pathname === '/api/v1/spec-monitors' && request.method === 'POST') return success(response, await service.createSpecificationMonitor(await readJsonBody(request)), 201);
+      if (pathname === '/api/v1/spec-monitors/check-all' && request.method === 'POST') return success(response, await service.checkAllSpecificationMonitors());
+      let specMonitorCheck = pathname.match(/^\/api\/v1\/spec-monitors\/([^/]+)\/check$/);
+      if (specMonitorCheck && request.method === 'POST') return success(response, await service.checkSpecificationMonitor(decodeURIComponent(specMonitorCheck[1])));
+      let specMonitor = pathname.match(/^\/api\/v1\/spec-monitors\/([^/]+)$/);
+      if (specMonitor && request.method === 'PATCH') return success(response, service.updateSpecificationMonitor(decodeURIComponent(specMonitor[1]), await readJsonBody(request)));
+      if (specMonitor && request.method === 'DELETE') return success(response, service.deleteSpecificationMonitor(decodeURIComponent(specMonitor[1])));
 
       // 结构化条目导出（与设计流程/其它系统联动预留）
       if (pathname === '/api/v1/export/items' && request.method === 'POST') {
@@ -388,6 +398,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       failure(response, error);
     }
   });
+  server.on('close', () => { if (typeof service.shutdown === 'function') service.shutdown(); });
   return { server, service };
 }
 

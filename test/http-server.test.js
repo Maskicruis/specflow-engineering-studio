@@ -118,3 +118,25 @@ test('exposes project templates, project creation and checklist updates', async 
   const checked = await fetch(base + '/api/v1/projects/prj_test/checklist/check_flood-level', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'ready' }) }).then(response => response.json());
   assert.equal(checked.data.checklist[0].status, 'ready');
 });
+
+test('exposes scheduled specification website monitoring', async t => {
+  const item = { id: 'mon_test', name: '规范公告', url: 'https://example.com/standards', status: 'baseline' };
+  const service = Object.assign(fakeService(), {
+    listSpecificationMonitors: () => ({ items: [item], running: [] }),
+    createSpecificationMonitor: async body => ({ ...item, name: body.name }),
+    updateSpecificationMonitor: (_id, body) => ({ ...item, enabled: body.enabled }),
+    deleteSpecificationMonitor: id => ({ id, removed: true }),
+    checkSpecificationMonitor: async () => ({ ...item, status: 'unchanged' }),
+    checkAllSpecificationMonitors: async () => ({ items: [{ ...item, status: 'unchanged' }] })
+  });
+  const { server } = createHttpServer({ service });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const listed = await fetch(base + '/api/v1/spec-monitors').then(response => response.json());
+  assert.equal(listed.data.items[0].id, 'mon_test');
+  const checked = await fetch(base + '/api/v1/spec-monitors/mon_test/check', { method: 'POST' }).then(response => response.json());
+  assert.equal(checked.data.status, 'unchanged');
+  const created = await fetch(base + '/api/v1/spec-monitors', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: '住建部公告', url: 'https://example.com/notices' }) }).then(response => response.json());
+  assert.equal(created.data.name, '住建部公告');
+});

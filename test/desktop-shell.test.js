@@ -31,6 +31,7 @@ test('desktop bridge exposes only bounded window and picker operations', () => {
   assert.match(preload, /connector:install/);
   assert.match(preload, /balance:\s*\{/);
   assert.match(preload, /designTools:\s*\{/);
+  assert.match(preload, /design-tools:open-window/);
   assert.match(preload, /chooseProjectDirectory/);
   assert.match(preload, /project:open-directory/);
   assert.doesNotMatch(preload, /harness:\s*\{/);
@@ -42,10 +43,15 @@ test('desktop shell integrates balance, project folders and external design tool
   assert.match(main, /new DesignToolRegistry/);
   assert.match(main, /dialog:choose-project-directory/);
   assert.match(main, /design-tools:launch/);
+  assert.match(main, /openBuiltInToolWindow/);
+  assert.match(main, /toolWindows\.get/);
+  assert.match(main, /\/tools\/road-slope/);
+  assert.match(main, /SPECFLOW_CAPTURE_TOOL/);
   assert.match(ui, /id="balanceTitleButton"/);
   assert.match(ui, /data-workspace-page="design"/);
   assert.match(ui, /data-workspace-page="tools"/);
   assert.ok(pkg.build.files.includes('ui-modules/**/*'));
+  assert.ok(pkg.build.files.includes('ui-tools/**/*'));
 });
 
 test('desktop shell connects to external DeepSeek Harness without hosting a second runtime', () => {

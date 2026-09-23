@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>道路排水坡度设计 · SpecFlow</title>
+  <link rel="stylesheet" href="/tool-assets/road-slope-window.css">
+</head>
+<body>
+  <main class="tool-window">
+    <header class="tool-window-head">
+      <div class="tool-heading">
+        <span class="tool-mark" aria-hidden="true">↘</span>
+        <div><h1>道路排水坡度设计</h1><p>基于节点、实际距离和排水方向计算纵向排水标高</p></div>
+      </div>
+      <div class="tool-window-meta"><span class="status-dot"></span>独立工具窗口</div>
+    </header>
+    <section class="road-designer" aria-label="道路排水坡度设计">
+      <div class="road-toolbar">
+        <button class="btn active" data-slope-action="mode" data-slope-mode="select">选择 / 框选</button>
+        <button class="btn" data-slope-action="mode" data-slope-mode="add">连续插入节点</button>
+        <button class="btn" data-slope-action="connect">连接两节点</button>
+        <span class="separator"></span>
+        <span class="toolbar-label">双击延伸</span>
+        <button class="btn direction" data-slope-action="direction" data-direction="up" title="向上延伸">↑</button>
+        <button class="btn direction active" data-slope-action="direction" data-direction="right" title="向右延伸">→</button>
+        <button class="btn direction" data-slope-action="direction" data-direction="down" title="向下延伸">↓</button>
+        <button class="btn direction" data-slope-action="direction" data-direction="left" title="向左延伸">←</button>
+        <span class="separator"></span>
+        <label>默认实距 <input id="slopeDistanceDefault" type="number" value="20" min="0.01" step="0.1"> m</label>
+        <label>设计坡度 <input id="slopeDefault" type="number" value="5" step="0.1"> ‰</label>
+        <label>规范最小 <input id="slopeMinDefault" type="number" value="3" min="0" step="0.1"> ‰</label>
+        <label>标高小数 <input id="slopeDecimals" type="number" value="3" min="0" max="6"></label>
+        <button class="btn primary" data-slope-action="calculate">计算网络标高</button>
+        <button class="btn" data-slope-action="delete">删除选中</button>
+        <button class="btn" data-slope-action="export">导出 JSON</button>
+        <button class="btn" data-slope-action="clear">清空</button>
+      </div>
+      <div class="road-hint">
+        <span>每条坡段只连接相邻节点，箭头及水流动画不会跨越中间节点。</span>
+        <span id="slopeState" class="slope-state" aria-live="polite">自动保存到本机</span>
+      </div>
+      <div class="road-layout">
+        <div class="road-canvas-wrap"><svg id="slopeCanvas" class="road-canvas" viewBox="0 0 1000 600" aria-label="道路排水坡度设计画布"></svg></div>
+        <aside class="road-inspector">
+          <section><h2>对象属性</h2><div id="slopeInspectorContent"></div></section>
+          <section><h2>网络计算</h2><table id="slopeResults" class="slope-results"></table></section>
+        </aside>
+      </div>
+    </section>
+  </main>
+  <script src="/app/road-slope-core.js"></script>
+  <script src="/tool-assets/road-slope-window.js"></script>
+</body>
+</html>

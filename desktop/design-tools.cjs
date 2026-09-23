@@ -33,7 +33,11 @@ class DesignToolRegistry {
       [CALCULATOR_ID]: {
         id: CALCULATOR_ID,
         name: '多功能计算器',
-        description: '现有工程计算器',
+        description: '调用已配置的本地工程计算程序，适合常用公式与数值计算',
+        category: 'general',
+        discipline: '通用计算',
+        icon: '∑',
+        launchMode: 'external',
         path: String(stored?.tools?.[CALCULATOR_ID]?.path || calculatorPath),
         hotkey: 'Ctrl+Alt+C',
         kind: 'executable'
@@ -49,7 +53,7 @@ class DesignToolRegistry {
   list() {
     return {
       items: [this.publicTool(this.tools[CALCULATOR_ID]), {
-        id: 'road-slope', name: '道路排水坡度设计', description: '绘制排水箭头并自动计算节点设计标高', hotkey: 'Ctrl+Alt+R', kind: 'built-in', available: true
+        id: 'road-slope', name: '道路排水坡度设计', description: '根据实际距离、坡向和控制标高计算逐节点排水网络', category: 'site', discipline: '总图与道路', icon: '↘', launchMode: 'window', route: '/tools/road-slope', hotkey: 'Ctrl+Alt+R', kind: 'built-in', available: true
       }]
     };
   }

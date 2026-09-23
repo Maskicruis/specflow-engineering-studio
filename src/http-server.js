@@ -182,6 +182,7 @@ function decodeFileName(value) {
 
 function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
   const uiFile = path.join(ROOT, 'ui.html');
+  const roadSlopeToolFile = path.join(ROOT, 'ui-tools', 'road-slope.html');
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, 'http://localhost');
     const pathname = url.pathname;
@@ -192,6 +193,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
     }
     try {
       if (pathname === '/') return sendStaticAsset(request, response, 'ui.html', uiFile, 'text/html; charset=utf-8');
+      if (pathname === '/tools/road-slope') return sendStaticAsset(request, response, 'ui-tools/road-slope.html', roadSlopeToolFile, 'text/html; charset=utf-8');
       if (pathname.startsWith('/lib/')) {
         const filename = path.basename(pathname);
         return sendStaticAsset(request, response, 'lib/' + filename, path.join(ROOT, 'lib', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
@@ -200,6 +202,11 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const filename = path.basename(pathname);
         if (!['workspace.js', 'workspace.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
+      }
+      if (pathname.startsWith('/tool-assets/')) {
+        const filename = path.basename(pathname);
+        if (!['road-slope-window.js', 'road-slope-window.css'].includes(filename)) throw new HttpError(404, '工具界面资源不存在', 'NOT_FOUND');
+        return sendStaticAsset(request, response, 'ui-tools/' + filename, path.join(ROOT, 'ui-tools', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
 
       if (pathname === '/open/citation' && request.method === 'GET') {

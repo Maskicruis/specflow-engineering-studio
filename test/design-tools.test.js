@@ -16,6 +16,8 @@ test('design tool registry persists and launches only the configured executable'
     const registry = new DesignToolRegistry({ dataDir: temporary, calculatorPath: executable, spawnImpl: file => { launched = file; return { unref() {} }; } });
     assert.equal(registry.list().items.find(item => item.id === 'calculator').available, true);
     assert.equal(registry.list().items.find(item => item.id === 'road-slope').hotkey, 'Ctrl+Alt+R');
+    assert.equal(registry.list().items.find(item => item.id === 'road-slope').launchMode, 'window');
+    assert.equal(registry.list().items.find(item => item.id === 'calculator').discipline, '通用计算');
     registry.launch('calculator');
     assert.equal(launched, executable);
     assert.throws(() => registry.update('calculator', { path: path.join(temporary, 'bad.txt') }), /exe、cmd 或 bat/);

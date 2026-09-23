@@ -28,7 +28,8 @@ contextBridge.exposeInMainWorld('specflowDesktop', {
   designTools: {
     list: () => ipcRenderer.invoke('design-tools:list'),
     update: (id, patch) => ipcRenderer.invoke('design-tools:update', String(id || ''), patch || {}),
-    launch: id => ipcRenderer.invoke('design-tools:launch', String(id || ''))
+    launch: id => ipcRenderer.invoke('design-tools:launch', String(id || '')),
+    openWindow: id => ipcRenderer.invoke('design-tools:open-window', String(id || ''))
   },
   connector: {
     status: () => ipcRenderer.invoke('connector:status'),

@@ -52,6 +52,21 @@ test('does not grant CORS access to an arbitrary website by default', async t =>
   assert.equal(response.headers.has('access-control-allow-origin'), false);
 });
 
+test('serves the road drainage designer as a standalone tool surface', async t => {
+  const { server } = createHttpServer({ service: fakeService() });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const pageResponse = await fetch(base + '/tools/road-slope');
+  const page = await pageResponse.text();
+  assert.equal(pageResponse.status, 200);
+  assert.match(page, /独立工具窗口/);
+  assert.match(page, /id="slopeCanvas"/);
+  const scriptResponse = await fetch(base + '/tool-assets/road-slope-window.js');
+  assert.equal(scriptResponse.status, 200);
+  assert.match(await scriptResponse.text(), /adjacent-nodes-only/);
+});
+
 test('exposes document group management through the versioned API', async t => {
   const groups = [];
   const service = Object.assign(fakeService(), {

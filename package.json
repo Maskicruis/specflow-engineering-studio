@@ -16,7 +16,7 @@
     "release:publish": "node scripts/publish-release.cjs",
     "serve": "node cli.js serve",
     "test": "node --test",
-    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/update-manager.cjs && node --check desktop/harness-connector.cjs && node --check desktop/deepseek-balance.cjs && node --check desktop/design-tools.cjs && node --check src/project-workspace.js && node --check src/spec-monitor.js && node --check src/query-planner.js && node --check src/citation-links.js && node --check ui-modules/road-slope-core.js && node --check ui-modules/workspace.js && node --check scripts/prepare-runtime.cjs && node --check scripts/publish-release.cjs"
+    "check": "node --check server.js && node --check cli.js && node --check desktop/main.cjs && node --check desktop/preload.cjs && node --check desktop/update-manager.cjs && node --check desktop/harness-connector.cjs && node --check desktop/deepseek-balance.cjs && node --check desktop/design-tools.cjs && node --check src/project-workspace.js && node --check src/spec-monitor.js && node --check src/query-planner.js && node --check src/citation-links.js && node --check ui-modules/road-slope-core.js && node --check ui-modules/workspace.js && node --check ui-tools/road-slope-window.js && node --check scripts/prepare-runtime.cjs && node --check scripts/publish-release.cjs"
   },
   "author": "Maskicruis",
   "dependencies": {
@@ -43,6 +43,7 @@
       "build/app.ico",
       "src/**/*",
       "ui-modules/**/*",
+      "ui-tools/**/*",
       "lib/**/*",
       "schemas/**/*",
       "packages/dsh-specflow-knowledge/**/*",

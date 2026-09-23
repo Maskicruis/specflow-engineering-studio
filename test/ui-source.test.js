@@ -9,6 +9,8 @@ const vm = require('node:vm');
 const html = fs.readFileSync(path.join(__dirname, '..', 'ui.html'), 'utf8');
 const workspaceScript = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'workspace.js'), 'utf8');
 const slopeCore = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'road-slope-core.js'), 'utf8');
+const slopeToolHtml = fs.readFileSync(path.join(__dirname, '..', 'ui-tools', 'road-slope.html'), 'utf8');
+const slopeToolScript = fs.readFileSync(path.join(__dirname, '..', 'ui-tools', 'road-slope-window.js'), 'utf8');
 
 test('embedded browser scripts are syntactically valid', () => {
   const scripts = [...html.matchAll(/<script(?:\s+type="module")?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
@@ -70,28 +72,34 @@ test('workspace shell keeps the primary workflow focused and accessible', () => 
   assert.match(html, /function selectSettingsTab/);
 });
 
-test('engineering workspace and road drainage designer are wired into the shell', () => {
+test('engineering workspace launches the road drainage designer in its own tool window', () => {
   new vm.Script(workspaceScript);
   new vm.Script(slopeCore);
+  new vm.Script(slopeToolScript);
   assert.match(html, /设计助手/);
-  assert.match(html, /设计工具/);
+  assert.match(html, /工具工作台/);
   assert.match(html, /id="projectName"/);
   assert.match(html, /id="checklistList"/);
-  assert.match(html, /id="slopeCanvas"/);
-  assert.match(html, /id="slopeDecimals"/);
+  assert.doesNotMatch(html, /id="slopeCanvas"/);
+  assert.match(slopeToolHtml, /id="slopeCanvas"/);
+  assert.match(slopeToolHtml, /id="slopeDecimals"/);
+  assert.match(slopeToolHtml, /独立工具窗口/);
   assert.match(workspaceScript, /function createEngineeringProject/);
-  assert.match(workspaceScript, /function autoSlope/);
+  assert.match(workspaceScript, /function openRoadSlopeWindow/);
+  assert.match(workspaceScript, /function launchDesignTool/);
+  assert.match(workspaceScript, /DESKTOP\.designTools\.openWindow\(tool\.id\)/);
+  assert.match(workspaceScript, /function renderDesignToolCatalog/);
   assert.match(workspaceScript, /ctrlKey&&event\.altKey/);
   assert.match(workspaceScript, /DESKTOP\.balance\.get/);
   assert.match(html, /id="specMonitorDialog"/);
   assert.match(workspaceScript, /function loadSpecMonitors/);
-  assert.match(workspaceScript, /selectionBox/);
-  assert.match(workspaceScript, /lastActivation/);
-  assert.match(workspaceScript, /edgeDistance/);
+  assert.match(slopeToolScript, /selectionBox/);
+  assert.match(slopeToolScript, /lastActivation/);
+  assert.match(slopeToolScript, /edgeDistance/);
   assert.match(slopeCore, /function calculateNetwork/);
   assert.match(slopeCore, /function segmentNodeKeys/);
   assert.match(slopeCore, /function normalizeSegments/);
-  assert.match(workspaceScript, /function orientSlopeNode/);
-  assert.match(html, /连接两节点/);
-  assert.doesNotMatch(workspaceScript, /road-edge-chevron/);
+  assert.match(slopeToolScript, /function orientNode/);
+  assert.match(slopeToolHtml, /连接两节点/);
+  assert.doesNotMatch(slopeToolScript, /road-edge-chevron/);
 });

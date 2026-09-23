@@ -15,7 +15,19 @@ let mainWindow = null;
 let runtimeInfo = null;
 let updater = null;
 let designTools = null;
+const toolWindows = new Map();
 let desktopPreferences = { autoCheckUpdates: true };
+
+const BUILT_IN_TOOL_WINDOWS = Object.freeze({
+  'road-slope': {
+    title: '道路排水坡度设计 · SpecFlow',
+    route: '/tools/road-slope',
+    width: 1280,
+    height: 820,
+    minWidth: 900,
+    minHeight: 620
+  }
+});
 
 function preferencesPath() {
   return path.join(app.getPath('userData'), 'desktop-preferences.json');
@@ -117,6 +129,50 @@ function openCitationInMain(payload = {}) {
   else execute();
 }
 
+function openBuiltInToolWindow(toolId) {
+  const id = String(toolId || '');
+  const definition = BUILT_IN_TOOL_WINDOWS[id];
+  if (!definition) throw new Error('内置设计工具不存在');
+  const current = toolWindows.get(id);
+  if (current && !current.isDestroyed()) {
+    if (current.isMinimized()) current.restore();
+    current.show();
+    current.focus();
+    return { id, opened: true, reused: true };
+  }
+  if (!runtimeInfo) throw new Error('SpecFlow 本地服务尚未就绪');
+  const toolWindow = new BrowserWindow({
+    width: definition.width,
+    height: definition.height,
+    minWidth: definition.minWidth,
+    minHeight: definition.minHeight,
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: '#0c0f14',
+    title: definition.title,
+    icon: path.join(__dirname, '..', 'build', 'app.ico'),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+      webviewTag: false,
+      spellcheck: true
+    }
+  });
+  toolWindows.set(id, toolWindow);
+  toolWindow.setMenuBarVisibility(false);
+  toolWindow.once('ready-to-show', () => toolWindow.show());
+  toolWindow.on('closed', () => {
+    if (toolWindows.get(id) === toolWindow) toolWindows.delete(id);
+  });
+  toolWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  const toolUrl = new URL(definition.route, runtimeInfo.url);
+  toolUrl.searchParams.set('desktop', '1');
+  toolWindow.loadURL(toolUrl.toString());
+  return { id, opened: true, reused: false };
+}
+
 function registerIpc() {
   ipcMain.on('window:minimize', () => mainWindow?.minimize());
   ipcMain.on('window:toggle-maximize', () => {
@@ -166,6 +222,7 @@ function registerIpc() {
   ipcMain.handle('design-tools:list', () => designTools.list());
   ipcMain.handle('design-tools:update', (_event, id, patch) => designTools.update(id, patch));
   ipcMain.handle('design-tools:launch', (_event, id) => designTools.launch(id));
+  ipcMain.handle('design-tools:open-window', (_event, id) => openBuiltInToolWindow(id));
   ipcMain.handle('balance:get', () => fetchDeepSeekBalance());
   ipcMain.handle('connector:status', () => connectorStatus());
   ipcMain.handle('connector:install', () => installConnector());
@@ -189,14 +246,15 @@ function registerIpc() {
 function createMainWindow(url) {
   const capturePath = process.env.SPECFLOW_CAPTURE_PATH;
   const capturePage = process.env.SPECFLOW_CAPTURE_PAGE;
+  const captureTool = process.env.SPECFLOW_CAPTURE_TOOL;
   const captureSettings = process.env.SPECFLOW_CAPTURE_SETTINGS === '1';
   let captureCitation = null;
   try { captureCitation = JSON.parse(process.env.SPECFLOW_CAPTURE_CITATION || 'null'); } catch { captureCitation = null; }
   let captureChat = null;
   try { captureChat = JSON.parse(process.env.SPECFLOW_CAPTURE_CHAT || 'null'); } catch { captureChat = null; }
   mainWindow = new BrowserWindow({
-    width: 1460,
-    height: 920,
+    width: captureTool ? 1280 : 1460,
+    height: captureTool ? 820 : 920,
     minWidth: 980,
     minHeight: 650,
     show: false,
@@ -222,7 +280,7 @@ function createMainWindow(url) {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
         try {
-          if (capturePage) {
+          if (capturePage && !captureTool) {
             await mainWindow.webContents.executeJavaScript(`showPage(${JSON.stringify(capturePage === 'agent' ? 'assistant' : capturePage)})`);
             await new Promise(resolve => setTimeout(resolve, 180));
           }
@@ -253,7 +311,8 @@ function createMainWindow(url) {
     if (/^https?:\/\//i.test(target)) shell.openExternal(target);
     return { action: 'deny' };
   });
-  mainWindow.loadURL(url);
+  const initialUrl = captureTool ? new URL(`/tools/${captureTool}`, url).toString() : url;
+  mainWindow.loadURL(initialUrl);
   if (desktopPreferences.autoCheckUpdates && app.isPackaged && !capturePath) {
     setTimeout(() => updater.check(), 6000);
   }
@@ -289,7 +348,7 @@ else {
 }
 
 app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0 && runtimeInfo) createMainWindow(runtimeInfo.url);
+  if ((!mainWindow || mainWindow.isDestroyed()) && runtimeInfo) createMainWindow(runtimeInfo.url);
 });
 
 app.on('window-all-closed', () => {

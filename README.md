@@ -120,4 +120,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.3 发布说明](docs/RELEASE_NOTES_0.9.3_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.4 发布说明](docs/RELEASE_NOTES_0.9.4_CN.md)

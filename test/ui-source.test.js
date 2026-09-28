@@ -11,12 +11,30 @@ const workspaceScript = fs.readFileSync(path.join(__dirname, '..', 'ui-modules',
 const slopeCore = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'road-slope-core.js'), 'utf8');
 const slopeToolHtml = fs.readFileSync(path.join(__dirname, '..', 'ui-tools', 'road-slope.html'), 'utf8');
 const slopeToolScript = fs.readFileSync(path.join(__dirname, '..', 'ui-tools', 'road-slope-window.js'), 'utf8');
+const brandTheme = fs.readFileSync(path.join(__dirname, '..', 'ui-modules', 'brand-theme.css'), 'utf8');
+const slopeToolTheme = fs.readFileSync(path.join(__dirname, '..', 'ui-tools', 'road-slope-window.css'), 'utf8');
 
 test('embedded browser scripts are syntactically valid', () => {
   const scripts = [...html.matchAll(/<script(?:\s+type="module")?>([\s\S]*?)<\/script>/g)].map(match => match[1]);
-  assert.equal(scripts.length, 2);
+  assert.equal(scripts.length, 3);
   new vm.Script(scripts[0]);
-  new vm.Script(scripts[1].replace(/^import .*?;\s*/m, 'const pdfjs={GlobalWorkerOptions:{}};'));
+  new vm.Script(scripts[1]);
+  new vm.Script(scripts[2].replace(/^import .*?;\s*/m, 'const pdfjs={GlobalWorkerOptions:{}};'));
+});
+
+test('CRRC-inspired branding and both complete theme palettes are wired into every window', () => {
+  assert.match(html, /\/brand\/specflow-mark\.svg/);
+  assert.match(html, /Rail · New Energy/);
+  assert.match(html, /--brand-blue:/);
+  assert.match(html, /--brand-red:/);
+  assert.match(html, /--renewable:/);
+  assert.match(html, /html\[data-theme="light"\]/);
+  assert.match(html, /\/app\/brand-theme\.css/);
+  assert.match(brandTheme, /var\(--brand-red\)/);
+  assert.match(slopeToolHtml, /localStorage\.getItem\('kb-theme'\)/);
+  assert.match(slopeToolScript, /window\.addEventListener\('storage'/);
+  assert.match(slopeToolTheme, /html\[data-theme="light"\]/);
+  assert.match(slopeToolScript, /var\(--canvas-grid\)/);
 });
 
 test('viewer contains the compatibility fallback and aligned overlay wrapper', () => {

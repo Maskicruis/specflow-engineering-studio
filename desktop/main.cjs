@@ -18,6 +18,12 @@ let designTools = null;
 const toolWindows = new Map();
 let desktopPreferences = { autoCheckUpdates: true };
 
+// Keep Chromium on its native high-DPI rendering path and a stable color profile.
+// We intentionally do not force a scale factor so Windows can apply the user's display setting.
+app.commandLine.appendSwitch('high-dpi-support', '1');
+app.commandLine.appendSwitch('force-color-profile', 'srgb');
+if (process.env.SPECFLOW_CAPTURE_PATH) app.disableHardwareAcceleration();
+
 const BUILT_IN_TOOL_WINDOWS = Object.freeze({
   'road-slope': {
     title: '道路排水坡度设计 · SpecFlow',
@@ -148,7 +154,7 @@ function openBuiltInToolWindow(toolId) {
     minHeight: definition.minHeight,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: '#0c0f14',
+    backgroundColor: '#08111e',
     title: definition.title,
     icon: path.join(__dirname, '..', 'build', 'app.ico'),
     webPreferences: {
@@ -247,6 +253,7 @@ function createMainWindow(url) {
   const capturePath = process.env.SPECFLOW_CAPTURE_PATH;
   const capturePage = process.env.SPECFLOW_CAPTURE_PAGE;
   const captureTool = process.env.SPECFLOW_CAPTURE_TOOL;
+  const captureTheme = process.env.SPECFLOW_CAPTURE_THEME === 'light' ? 'light' : 'dark';
   const captureSettings = process.env.SPECFLOW_CAPTURE_SETTINGS === '1';
   let captureCitation = null;
   try { captureCitation = JSON.parse(process.env.SPECFLOW_CAPTURE_CITATION || 'null'); } catch { captureCitation = null; }
@@ -260,7 +267,7 @@ function createMainWindow(url) {
     show: false,
     frame: false,
     autoHideMenuBar: true,
-    backgroundColor: '#0d0f12',
+    backgroundColor: '#08111e',
     title: 'SpecFlow Engineering Studio',
     icon: path.join(__dirname, '..', 'build', 'app.ico'),
     webPreferences: {
@@ -280,6 +287,8 @@ function createMainWindow(url) {
     mainWindow.webContents.once('did-finish-load', () => {
       setTimeout(async () => {
         try {
+          await mainWindow.webContents.executeJavaScript(`(()=>{const theme=${JSON.stringify(captureTheme)};document.documentElement.setAttribute('data-theme',theme);localStorage.setItem('kb-theme',theme)})()`);
+          await new Promise(resolve => setTimeout(resolve, 120));
           if (capturePage && !captureTool) {
             await mainWindow.webContents.executeJavaScript(`showPage(${JSON.stringify(capturePage === 'agent' ? 'assistant' : capturePage)})`);
             await new Promise(resolve => setTimeout(resolve, 180));

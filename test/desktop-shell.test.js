@@ -19,6 +19,8 @@ test('desktop shell owns the service and uses a native frameless window', () => 
   assert.match(main, /nodeIntegration:\s*false/);
   assert.match(main, /webviewTag:\s*false/);
   assert.match(main, /EADDRINUSE/);
+  assert.match(main, /high-dpi-support/);
+  assert.match(main, /force-color-profile/);
 });
 
 test('desktop bridge exposes only bounded window and picker operations', () => {
@@ -47,6 +49,7 @@ test('desktop shell integrates balance, project folders and external design tool
   assert.match(main, /toolWindows\.get/);
   assert.match(main, /\/tools\/road-slope/);
   assert.match(main, /SPECFLOW_CAPTURE_TOOL/);
+  assert.match(main, /SPECFLOW_CAPTURE_THEME/);
   assert.match(ui, /id="balanceTitleButton"/);
   assert.match(ui, /data-workspace-page="design"/);
   assert.match(ui, /data-workspace-page="tools"/);
@@ -76,6 +79,8 @@ test('desktop layout has titlebar, runtime status and settings drawer', () => {
   assert.equal(pkg.build.extraMetadata.main, 'desktop/main.cjs');
   assert.equal(pkg.build.productName, 'SpecFlow Engineering Studio');
   assert.equal(pkg.build.win.icon, 'build/app.ico');
+  assert.ok(pkg.build.files.includes('build/app.png'));
+  assert.ok(pkg.build.files.includes('build/specflow-mark.svg'));
   assert.equal(pkg.build.nsis.runAfterFinish, true);
 });
 

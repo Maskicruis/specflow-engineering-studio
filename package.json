@@ -1,6 +1,6 @@
 {
   "name": "specflow-engineering-studio",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "private": true,
   "description": "工程设计工作台：项目目录、全过程检查、设计工具、独立 LLM、MinerU 文档数据库与 Harness 工作流",
   "type": "commonjs",
@@ -41,6 +41,8 @@
       "desktop/**/*",
       "build/update-config.json",
       "build/app.ico",
+      "build/app.png",
+      "build/specflow-mark.svg",
       "src/**/*",
       "ui-modules/**/*",
       "ui-tools/**/*",

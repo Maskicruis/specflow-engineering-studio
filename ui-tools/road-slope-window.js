@@ -4,6 +4,15 @@
   var STORAGE_KEY = 'specflow-road-slope';
   var state = emptyState();
 
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : 'dark');
+  }
+
+  try { applyTheme(localStorage.getItem('kb-theme') || 'dark'); } catch (_) { applyTheme('dark'); }
+  window.addEventListener('storage', function (event) {
+    if (event.key === 'kb-theme') applyTheme(event.newValue || 'dark');
+  });
+
   function emptyState() {
     return { nodes: [], edges: [], mode: 'select', selected: { type: 'nodes', ids: [] }, drag: null, selectionBox: null, serial: 1, edgeSerial: 1, direction: 'right', lastResults: null, lastActivation: null };
   }
@@ -158,7 +167,7 @@
   function render() {
     var canvas = document.getElementById('slopeCanvas');
     var selectedKeys = new Set(selectedNodeKeys());
-    var markup = '<defs><pattern id="roadGrid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="#252b35" stroke-width="1"/></pattern><marker id="slopeArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9Z" fill="#7aa2ff"/></marker></defs><rect width="1000" height="600" fill="url(#roadGrid)"/>';
+    var markup = '<defs><pattern id="roadGrid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M25 0H0V25" fill="none" stroke="var(--canvas-grid)" stroke-width="1"/></pattern><marker id="slopeArrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto"><path d="M0 0 9 4.5 0 9Z" fill="var(--canvas-arrow)"/></marker></defs><rect width="1000" height="600" fill="url(#roadGrid)"/>';
     markup += state.edges.map(function (edge, index) {
       var line = lineFor(edge);
       if (!line) return '';

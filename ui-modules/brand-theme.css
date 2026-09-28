@@ -1,0 +1,35 @@
+/* Loaded after feature styles so every visible surface resolves through the shared theme tokens. */
+.title-balance.ok { color: var(--renewable); }
+.title-balance.warn { color: var(--amber); }
+.engineering-body, .tools-body { padding: 24px 28px 52px; }
+.studio-card, .tool-card, .metric-card, .spec-monitor-item { box-shadow: 0 8px 24px color-mix(in srgb, var(--overlay) 12%, transparent); }
+.studio-card-head h3, .tool-copy strong { font-size: 13px; }
+.studio-card-head p, .studio-field label, .studio-state, .metric-card span, .folder-chip, .check-group h4, .tool-copy p, .tool-copy kbd { font-size: 11px; }
+.check-label { font-size: 12px; }
+.check-item select, .check-item input { min-height: 33px; font-size: 11px; }
+.check-progress i { background: linear-gradient(90deg, var(--brand-blue), var(--renewable)); }
+.tool-eyebrow { color: var(--brand-blue); font-size: 9px; }
+.tool-library-head h2 { font-size: 20px; }
+.tool-library-head p, .tool-section-head p, .tool-section-head > span, .tool-filter, .tool-filter-future, .tool-meta, .tool-window-badge, .tool-extension-note p { font-size: 10px; }
+.tool-icon { background: linear-gradient(145deg, var(--accent-soft), color-mix(in srgb, var(--renewable) 11%, var(--surface))); color: var(--accent-2); box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--brand-red) 58%, transparent); }
+.tool-filter.active { border-color: var(--brand-blue); background: var(--accent-soft); color: var(--accent-2); }
+.tool-card:hover { border-color: var(--line-2); box-shadow: 0 12px 30px color-mix(in srgb, var(--overlay) 18%, transparent); }
+.road-canvas-wrap { background: var(--canvas-bg); }
+.road-node rect { fill: color-mix(in srgb, var(--surface-3) 88%, var(--accent)); stroke: var(--accent-2); }
+.road-node.fixed rect { fill: color-mix(in srgb, var(--surface-3) 78%, var(--renewable)); stroke: var(--renewable); }
+.road-node.selected rect { stroke: var(--text); }
+.road-node text, .road-edge text { fill: var(--text); }
+.road-node .road-elevation, .road-empty, .road-empty-sub { fill: var(--text-3); }
+.road-edge .road-edge-base { stroke: var(--line-strong); }
+.road-edge .road-edge-arrow, .road-edge .road-edge-chevron { stroke: var(--accent-2); }
+.road-edge.selected .road-edge-base, .road-edge.selected .road-edge-arrow, .road-edge.selected .road-edge-chevron { stroke: var(--amber); }
+.road-edge text { stroke: var(--canvas-bg); }
+.road-flow-dot { fill: var(--accent-2); filter: drop-shadow(0 0 4px var(--accent)); }
+.road-selection { fill: color-mix(in srgb, var(--accent) 12%, transparent); stroke: var(--accent-2); }
+.spec-monitor-item.changed { border-color: color-mix(in srgb, var(--amber) 50%, transparent); }
+.spec-monitor-item.error { border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.monitor-status.changed { background: color-mix(in srgb, var(--amber) 12%, transparent); color: var(--amber); }
+.monitor-status.error { background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); }
+.monitor-status.baseline, .monitor-status.unchanged { background: color-mix(in srgb, var(--renewable) 11%, transparent); color: var(--green); }
+.monitor-item-copy strong, .monitor-item-url, .monitor-status, .monitor-meta, .monitor-change-list, .monitor-error { font-size: 10px; }
+@media (max-width: 780px) { .engineering-body, .tools-body { padding: 16px; } }

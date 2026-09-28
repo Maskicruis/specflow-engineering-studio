@@ -67,6 +67,17 @@ test('serves the road drainage designer as a standalone tool surface', async t =
   assert.match(await scriptResponse.text(), /adjacent-nodes-only/);
 });
 
+test('serves the shared vector brand mark without caching stale artwork', async t => {
+  const { server } = createHttpServer({ service: fakeService() });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/brand/specflow-mark.svg`);
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.match(await response.text(), /id="signal"/);
+});
+
 test('exposes document group management through the versioned API', async t => {
   const groups = [];
   const service = Object.assign(fakeService(), {

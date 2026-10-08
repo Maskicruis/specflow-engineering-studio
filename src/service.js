@@ -13,7 +13,8 @@ const { version: VERSION } = require('../package.json');
 const { RagIndex } = require('./rag');
 const { ask: askWithContext, askStream: askStreamContext } = require('./qa');
 const embeddings = require('./embeddings');
-const { isConfigured: llmConfigured } = require('./llm');
+const { isConfigured: llmConfigured, visionModel } = require('./llm');
+const { ChatImages, IMAGE_LIMITS, ImageInputError, DEFAULT_IMAGE_QUESTION, contentText } = require('./chat-images');
 const { SCENARIOS } = require('./scenarios');
 const { ProjectWorkspace } = require('./project-workspace');
 const { SpecificationMonitor } = require('./spec-monitor');
@@ -53,6 +54,7 @@ class KnowledgeBaseService {
     this.conversationsFile = path.join(DATA, 'conversations.json');
     this.conversations = readJson(this.conversationsFile, []);
     if (!Array.isArray(this.conversations)) this.conversations = [];
+    this.chatImages = new ChatImages(DATA);
     this.queue = new JobQueue({ concurrency: 1 });
     this.projectWorkspace = new ProjectWorkspace({ dataDir: DATA });
     this.specificationMonitor = new SpecificationMonitor({ dataDir: DATA });
@@ -496,8 +498,15 @@ class KnowledgeBaseService {
   deleteConversation(id) {
     const index = this.conversations.findIndex(item => item.id === id);
     if (index < 0) throw new Error('会话不存在');
+    const removed = this.normalizeConversation(this.conversations[index]);
     this.conversations.splice(index, 1);
     writeJson(this.conversationsFile, this.conversations);
+    const images = new Set(removed.turns.flatMap(turn => (turn.images || []).map(image => image.id)));
+    for (const imageId of images) {
+      if (!this.imageInUse(imageId)) {
+        try { this.chatImages.remove(imageId); } catch (error) { if (error.code !== 'IMAGE_NOT_FOUND') throw error; }
+      }
+    }
     return { id };
   }
 
@@ -506,10 +515,48 @@ class KnowledgeBaseService {
     if (!record) return [];
     return record.turns.flatMap(turn => {
       const rows = [];
-      if (turn.question) rows.push({ role: 'user', content: turn.question });
+      if (turn.question) rows.push({ role: 'user', content: turn.question + (turn.imageContext ? '\n图片识别摘要（待核实）：' + turn.imageContext.text + '\n' + turn.imageContext.searchTerms : ''), images: turn.images || [] });
       if (turn.answer) rows.push({ role: 'assistant', content: turn.answer });
       return rows;
     });
+  }
+
+  uploadChatImage(filename, buffer) { return this.chatImages.upload(buffer, filename); }
+
+  chatImage(id) { return this.chatImages.get(id); }
+
+  imageInUse(id) {
+    return this.conversations.some(record => this.normalizeConversation(record).turns.some(turn => (turn.images || []).some(image => image.id === id)));
+  }
+
+  deleteChatImage(id) {
+    if (this.imageInUse(id)) throw new ImageInputError('图片已在会话中使用，请先删除对应会话。', 'IMAGE_IN_USE', 409);
+    return this.chatImages.remove(id);
+  }
+
+  prepareChat(payload) {
+    const images = this.chatImages.resolve(payload.images);
+    const question = String(payload.question || '').trim() || (images.length ? DEFAULT_IMAGE_QUESTION : '');
+    if (!question) throw new Error('问题不能为空');
+    const inputHistory = Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId);
+    const history = [];
+    let availableBytes = IMAGE_LIMITS.maxTotalBytes - images.reduce((total, image) => total + image.size, 0);
+    let availableCount = IMAGE_LIMITS.maxImages - images.length;
+    // Keep the newest images first; cap the complete provider request, including past turns.
+    for (const row of inputHistory.slice(-12).reverse()) {
+      if (!row || !['user', 'assistant'].includes(row.role)) continue;
+      const selected = [];
+      let omitted = false;
+      if (row.role === 'user') {
+        for (const image of this.chatImages.resolve(row.images)) {
+          if (availableCount > 0 && availableBytes >= image.size) {
+            selected.push(image); availableCount--; availableBytes -= image.size;
+          } else omitted = true;
+        }
+      }
+      history.unshift({ role: row.role, content: contentText(row.content) + (omitted ? '\n[较早图片超出本轮容量，若需核查细节请重新添加图片。]' : ''), images: this.chatImages.hydrate(selected) });
+    }
+    return { question, images, modelImages: this.chatImages.hydrate(images), history };
   }
 
   /** 标准化条目导出：命中块 → 结构化卡片，供设计流程/其它系统消费（联动预留） */
@@ -548,14 +595,18 @@ class KnowledgeBaseService {
         'pdf-parse(mineru)', 'canonical-document', 'page-bbox-coordinates',
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
         'citation-jump-highlight', 'inline-citation-links', 'desktop-citation-handoff', 'conversation-history', 'multi-turn-chat',
+        'image-paste', 'multimodal-chat', 'image-aware-retrieval',
         'document-groups', 'group-scoped-retrieval', 'general-llm-fallback', 'item-export',
         'semantic-query-expansion', 'ambiguity-clarification',
         'engineering-project-workspace', 'project-folder-templates', 'design-completeness-checklist',
         'scheduled-specification-monitoring', 'specification-link-change-detection'
       ],
       retrieval: { default: 'bm25', hybrid: embeddings.isConfigured(this.settings.llm) ? 'available' : 'requires embeddingModel' },
+      images: { ...IMAGE_LIMITS, formats: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'], visionModel: visionModel(this.settings.llm) },
       schemas: {
         ask: 'schemas/ask-response.schema.json',
+        askRequest: 'schemas/ask-request.schema.json',
+        chatImage: 'schemas/chat-image.schema.json',
         citation: 'schemas/citation.schema.json',
         search: 'schemas/search-response.schema.json',
         itemExport: 'schemas/item-export.schema.json'
@@ -565,6 +616,8 @@ class KnowledgeBaseService {
         { method: 'GET', path: '/api/v1/search?q=&topK=&doc=&group=', desc: '语义查询规划 + 本地检索（可按文档或分组限定）' },
         { method: 'POST', path: '/api/v1/ask', desc: '问答（结构化引用）' },
         { method: 'POST', path: '/api/v1/ask/stream', desc: '问答（SSE 流式）' },
+        { method: 'POST', path: '/api/v1/chat/images', desc: '上传聊天图片（原始二进制，X-File-Name）' },
+        { method: 'GET/DELETE', path: '/api/v1/chat/images/:id', desc: '查看图片或删除尚未使用的附件' },
         { method: 'GET', path: '/api/v1/conversations', desc: '会话历史' },
         { method: 'GET/POST', path: '/api/v1/groups', desc: '文档分组列表与创建' },
         { method: 'PATCH/DELETE', path: '/api/v1/groups/:id', desc: '重命名或删除文档分组' },
@@ -585,8 +638,7 @@ class KnowledgeBaseService {
   }
 
   async ask(payload = {}) {
-    const question = String(payload.question || '').trim();
-    if (!question) throw new Error('问题不能为空');
+    const { question, images, modelImages, history } = this.prepareChat(payload);
     const started = Date.now();
     const result = await askWithContext({
       question,
@@ -594,13 +646,18 @@ class KnowledgeBaseService {
       topK: payload.topK,
       docIds: this.resolveDocumentIds(payload),
       retrievalMode: payload.retrievalMode,
-      history: Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId)
+      images: modelImages,
+      history
     }, this.deps());
+    if (!result.ok) return Object.assign({ question, images }, result);
     const conversationId = this.recordConversation({
       question,
       scenario: result.scenario,
       mode: result.mode,
       answer: result.answer || '',
+      images,
+      imageContext: result.imageContext || null,
+      model: result.model || '',
       citations: result.citations || [],
       retrieval: result.retrieval || null,
       queryPlan: result.queryPlan || null,
@@ -610,30 +667,32 @@ class KnowledgeBaseService {
       groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null,
       docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : []
     }, payload.conversationId);
-    return Object.assign({ conversationId, question }, result);
+    return Object.assign({ conversationId, question, images }, result);
   }
 
   /** 流式问答（SSE）：emit 事件；结束时写入会话历史 */
   async askStream(payload = {}, emit = () => {}) {
-    const question = String(payload.question || '').trim();
-    if (!question) { emit({ type: 'error', error: '问题不能为空' }); return; }
+    let prepared;
+    try { prepared = this.prepareChat(payload); } catch (error) { emit({ type: 'error', error: error.message, code: error.code || 'BAD_REQUEST' }); return; }
+    const { question, images, modelImages, history } = prepared;
     const started = Date.now();
-    let answer = ''; let citations = []; let mode = ''; let retrieval = null; let queryPlan = null; let retrievalMode = payload.retrievalMode || 'auto'; let grounding = '';
+    let answer = ''; let citations = []; let mode = ''; let retrieval = null; let queryPlan = null; let retrievalMode = payload.retrievalMode || 'auto'; let grounding = ''; let imageContext = null; let model = '';
     await askStreamContext({
       question,
       scenarioId: payload.scenario,
       topK: payload.topK,
       docIds: this.resolveDocumentIds(payload),
       retrievalMode: payload.retrievalMode,
-      history: Array.isArray(payload.history) && payload.history.length ? payload.history : this.conversationHistory(payload.conversationId)
+      images: modelImages,
+      history
     }, this.deps(), event => {
-      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; queryPlan = event.queryPlan || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; }
+      if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; queryPlan = event.queryPlan || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; imageContext = event.imageContext || null; }
       if (event.type === 'delta') answer += event.text || '';
-      if (event.type === 'done') { mode = event.mode || 'llm'; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
+      if (event.type === 'done') { mode = event.mode || 'llm'; model = event.model || ''; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
       emit(event);
     });
     if (mode) {
-      const conversationId = this.recordConversation({ question, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, queryPlan, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
+      const conversationId = this.recordConversation({ question, images, imageContext, model, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, queryPlan, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
       emit({ type: 'saved', conversationId });
     }
   }
@@ -642,7 +701,7 @@ class KnowledgeBaseService {
 
   llmStatus() {
     const llm = this.settings.llm || {};
-    return { configured: llmConfigured(llm), baseUrl: llm.baseUrl || '', model: llm.model || '', hasKey: !!String(llm.apiKey || '').trim() };
+    return { configured: llmConfigured(llm), baseUrl: llm.baseUrl || '', model: llm.model || '', visionModel: visionModel(llm), hasKey: !!String(llm.apiKey || '').trim() };
   }
 
   health() {

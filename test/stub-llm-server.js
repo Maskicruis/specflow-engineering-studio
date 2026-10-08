@@ -13,13 +13,15 @@ function stubVector(text) {
 
 function createStubLlm(options = {}) {
   const answer = options.answer || '【STUB 回答】依据片段 [1]：消防车道净宽度不应小于 4.0m。[1]';
-  const state = { calls: 0, lastBody: null };
+  const state = { calls: 0, lastBody: null, bodies: [] };
   const server = http.createServer((request, response) => {
     let raw = '';
     request.on('data', chunk => { raw += chunk; });
     request.on('end', () => {
       state.calls++;
       try { state.lastBody = JSON.parse(raw || '{}'); } catch { state.lastBody = null; }
+      state.bodies.push(state.lastBody);
+      if (options.status) { response.writeHead(options.status, { 'Content-Type': 'application/json' }); return response.end(JSON.stringify({ error: { message: 'stub rejected image' } })); }
       if (String(request.url || '').includes('/embeddings')) {
         state.embeddingCalls = (state.embeddingCalls || 0) + 1;
         const inputs = (state.lastBody && state.lastBody.input) || [];
@@ -32,9 +34,16 @@ function createStubLlm(options = {}) {
         response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
         return response.end(JSON.stringify(body));
       }
+      const contextRequest = options.imageContext && state.lastBody.messages.some(message => message.role === 'system' && /为规范检索提取图片/.test(message.content));
+      const content = contextRequest ? JSON.stringify(options.imageContext) : answer;
+      if (state.lastBody && state.lastBody.stream) {
+        response.writeHead(200, { 'Content-Type': 'text/event-stream' });
+        response.write('data: ' + JSON.stringify({ choices: [{ delta: { content } }] }) + '\n\n');
+        return response.end('data: [DONE]\n\n');
+      }
       const payload = {
         id: 'stub-chatcmpl', object: 'chat.completion',
-        choices: [{ index: 0, message: { role: 'assistant', content: answer }, finish_reason: 'stop' }],
+        choices: [{ index: 0, message: { role: 'assistant', content }, finish_reason: 'stop' }],
         usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 }
       };
       response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });

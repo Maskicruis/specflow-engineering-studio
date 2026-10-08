@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-78%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-85%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -23,6 +23,7 @@
 - **语义查询规划与追问**：在检索前把工程口语扩展为规范术语，例如把“综合楼”关联到“民用建筑群、民用建筑、公共建筑”等表达；当用途、高度、生产储存内容或相邻建筑信息不足时，先要求补充条件，再给出防火间距或危险性分类结论。
 - **自动服务发现**：SpecFlow 启动时向当前用户的 DSH 目录写入本机回环地址，Harness 工具可自动适配自定义端口或端口回退。
 - **独立模型运行**：无需打开 Harness。直接配置任意 OpenAI 兼容的 DeepSeek、Ollama、vLLM 或其他模型，即可使用智能问答、仅资料库和通用对话。
+- **截图与图片问答**：在输入框按 `Ctrl+V` 粘贴截图，或拖入 / 点击“＋”添加图片；支持缩略图、移除、原图预览、多图发送及最近对话追问。含图片的 DeepSeek 官方请求自动使用图像模型，也可在设置中指定其他兼容模型；智能问答先从图片提取主题，再按选定分组检索规范。
 - **完整工程助手**：像通用大模型客户端一样连续对话；可选“智能问答”“仅资料库”“通用对话”，资料不足时不再让整套系统失去通用问答能力。
 - **Codex 式对话工作区**：左侧顶部可直接新建独立对话，最近记录使用单行、全高列表；点击即可恢复完整多轮内容、引用和检索范围，也可继续追问。
 - **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模；通过明确的应用内对话框新建、重命名和删除文件分组，并支持逐文档归组。
@@ -81,6 +82,8 @@ GET   /api/v1/groups
 GET   /api/v1/search?q=消防车道&topK=8&group=<分组ID>
 POST  /api/v1/ask
 POST  /api/v1/ask/stream
+POST  /api/v1/chat/images
+GET   /api/v1/chat/images/:id
 GET   /api/v1/conversations?summary=1
 GET   /api/v1/workspace
 PATCH /api/v1/workspace
@@ -105,6 +108,7 @@ PATCH /api/v1/settings
 - 多功能计算器保持在用户指定位置运行，安装包和仓库均不复制该可执行文件；
 - 更新和覆盖安装不会主动删除资料库；
 - 智能/资料库模式会把检索命中的片段发给已配置的 LLM；通用对话只发送对话内容。若使用本地兼容模型，可保持资料不外发；
+- 图片原件保存在本机数据目录；发送图片及后续相关追问时，图片会提交给所配置的图像模型。删除会话后，不再被其他会话使用的图片也会移除；
 - API Key 不写入仓库，也不会进入 Release 产物。
 
 ## 开发与验证
@@ -120,4 +124,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.4 发布说明](docs/RELEASE_NOTES_0.9.4_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.5 发布说明](docs/RELEASE_NOTES_0.9.5_CN.md)

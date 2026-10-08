@@ -6,7 +6,7 @@
 
 ## 首次启动必须完成的配置
 
-SpecFlow v0.9.4 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
+SpecFlow v0.9.5 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
 
 1. 安装并确认 MinerU 可在本机运行；
 2. 打开 SpecFlow 右上角“设置”；
@@ -19,6 +19,10 @@ SpecFlow v0.9.4 包含独立 Node.js 运行时，不要求系统预装 Node.js�
 ## LLM（可选）
 
 不配置 LLM 时，本地 BM25 检索、文档阅读和引用定位仍可使用。需要生成式回答时，在设置中填写 OpenAI 兼容的 Base URL、模型名和 API Key；也可以连接本地 Ollama/vLLM 兼容端点。
+
+图片问答：进入“知识库问答”，点击输入框后按 `Ctrl+V` 粘贴截图，也可拖入图片或点击输入框左下角“＋”选图。图片会显示缩略图，可移除或点击放大；添加完成后输入问题并发送，也可直接发送图片。支持 PNG、JPEG、GIF、WebP，单张最多 8 MB，每条消息最多 8 张、合计 24 MB。
+
+“设置 → 模型接口”可以配置独立图像模型。使用 DeepSeek 官方接口时，含图片的消息默认使用 `deepseek-flash`；文字消息继续使用已配置的对话模型。智能问答会先识别图片内容再检索规范；通用对话直接分析图片。图片保留在最近对话中，便于后续追问。
 
 ## 工程目录与设计工具
 
@@ -55,7 +59,7 @@ Skill 会自动检测 SpecFlow、选择相关规范分组、分主题检索、�
 Release 附带 `SHA256SUMS.txt`。PowerShell 可用以下命令核对：
 
 ```powershell
-Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.4-x64.exe -Algorithm SHA256
+Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.5-x64.exe -Algorithm SHA256
 ```
 
 输出应与 `SHA256SUMS.txt` 对应行一致。

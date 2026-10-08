@@ -59,7 +59,34 @@
 - `docIds`：只检索指定文档；与 `groupId` 同时出现时以 `docIds` 为准。
 - `mode=clarification`：问题包含无法直接映射为规范分类的表达，当前轮只返回追问，不调用模型给出工程结论；会话下一轮会结合历史问题和补充信息重新规划检索。
 
-## 最近对话
+## 图片输入与多模态问答
+
+先将图片以原始二进制上传至 `POST /api/v1/chat/images`，文件名通过 URL 编码后的 `X-File-Name` 请求头传入。响应仍使用 v1 信封，`data` 包含 `{id, name, mime, size, width, height, previewUrl}`。`GET /api/v1/chat/images/:id` 返回原图片，`DELETE /api/v1/chat/images/:id` 删除尚未使用的附件；已被会话引用时返回 `409 IMAGE_IN_USE`。
+
+随后调用文字与图片共用的问答接口：
+
+```json
+{
+  "question": "请核对这张道路设计图。",
+  "images": ["img_00000000-0000-0000-0000-000000000000"],
+  "retrievalMode": "auto",
+  "groupId": "grp_example",
+  "conversationId": "c_example"
+}
+```
+
+`images` 可使用 ID 字符串或 `{id}`。不传文字时，系统默认提问“请分析这些图片中的内容”。原始图片不会放入问答 JSON，避免扩大请求和会话记录。图片保存在本机 `data/chat-images/`，会话只存引用；继续会话时会自动将此前图片重新带给图像模型。删除会话会清理不再被其他会话引用的图片。
+
+- 支持 PNG、JPEG、GIF、WebP；以实际文件内容判断类型，不接受 SVG 或任意远程图片地址。
+- 单张最多 8 MB、每条消息最多 8 张、总大小最多 24 MB、宽或高最多 8192 像素；完整模型请求（含历史图片）优先保留最近图片，并按同样总量限制裁剪较早图片。
+- `general` 直接进行图像与文字对话；`auto` / `knowledge` 先提取可读内容和主题，再检索指定文档或分组，最后结合原图与规范回答。识别摘要不视为规范依据，引用仍只指向实际文档。
+- 图像模型与文本模型共用接口地址和密钥。官方 DeepSeek 接口默认选择 `deepseek-flash` 处理包含图片的消息，可用 `llm.visionModel` 覆盖；其他兼容接口默认使用 `llm.model`。
+- 图像识别需配置支持图片的 LLM；配置缺失、识别失败或模型拒绝图片时返回明确错误，不会保存成成功会话。
+- `/api/v1/ask/stream` 使用相同图片引用格式；`GET /api/v1/llm` 返回实际图像模型，能力清单包括图片限制与请求/附件 schema。
+
+图像协议依据 [DeepSeek 图像理解文档](https://api-docs.deepseek.com/guides/vision/)。
+
+## 最近对话接口
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
@@ -119,7 +146,7 @@
   "library": "E:\\…\\资料库",
   "mineru": "C:\\…\\mineru.exe",
   "parser": { "backend": "pipeline", "method": "auto", "language": "ch" },
-  "llm": { "baseUrl": "https://api.deepseek.com/v1", "model": "deepseek-chat", "apiKey": "sk-…", "embeddingModel": "" }
+  "llm": { "baseUrl": "https://api.deepseek.com/v1", "model": "deepseek-flash", "apiKey": "sk-…", "visionModel": "", "embeddingModel": "" }
 }
 ```
 

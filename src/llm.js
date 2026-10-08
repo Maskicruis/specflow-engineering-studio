@@ -11,11 +11,22 @@ function isConfigured(llm) {
   const c = llm || {};
   return !!(String(c.baseUrl || '').trim() && String(c.model || '').trim());
 }
+function visionModel(llm = {}) {
+  if (String(llm.visionModel || '').trim()) return String(llm.visionModel).trim();
+  let deepseek = false;
+  try { deepseek = new URL(llm.baseUrl).hostname.toLowerCase() === 'api.deepseek.com'; } catch {}
+  return deepseek ? 'deepseek-flash' : String(llm.model || '').trim();
+}
+function hasImages(messages) {
+  return messages.some(message => Array.isArray(message.content) && message.content.some(part => part.type === 'image_url'));
+}
+function requestModel(llm, messages) { return hasImages(messages) ? visionModel(llm) : llm.model; }
 async function chat(llm, messages, options = {}) {
   const cfg = llm || {};
   if (!isConfigured(cfg)) return { ok: false, error: '未配置 LLM（请在设置中填写 baseUrl 与 model）', code: 'LLM_NOT_CONFIGURED' };
   const url = normalizeBase(cfg.baseUrl) + '/chat/completions';
-  const body = { model: cfg.model, messages, temperature: options.temperature == null ? 0.2 : options.temperature, stream: false };
+  const model = requestModel(cfg, messages);
+  const body = { model, messages, temperature: options.temperature == null ? 0.2 : options.temperature, stream: false };
   const headers = { 'Content-Type': 'application/json' };
   if (String(cfg.apiKey || '').trim()) headers.Authorization = 'Bearer ' + String(cfg.apiKey).trim();
   const controller = new AbortController();
@@ -26,7 +37,7 @@ async function chat(llm, messages, options = {}) {
     if (!res.ok) return { ok: false, error: 'HTTP ' + res.status + ' ' + text.slice(0, 300), code: 'LLM_HTTP_ERROR' };
     let data; try { data = JSON.parse(text); } catch { return { ok: false, error: '响应不是合法 JSON', code: 'LLM_BAD_RESPONSE' }; }
     const content = data && data.choices && data.choices[0] && data.choices[0].message ? data.choices[0].message.content : '';
-    return { ok: true, content: String(content || ''), usage: data.usage || null };
+    return { ok: true, content: String(content || ''), usage: data.usage || null, model };
   } catch (error) {
     return { ok: false, error: error && error.name === 'AbortError' ? '请求超时' : String(error && error.message || error), code: 'LLM_REQUEST_FAILED' };
   } finally { clearTimeout(timer); }
@@ -36,7 +47,8 @@ async function chatStream(llm, messages, onDelta, options = {}) {
   const cfg = llm || {};
   if (!isConfigured(cfg)) return { ok: false, error: '未配置 LLM（请在设置中填写 baseUrl 与 model）', code: 'LLM_NOT_CONFIGURED' };
   const url = normalizeBase(cfg.baseUrl) + '/chat/completions';
-  const body = { model: cfg.model, messages, temperature: options.temperature == null ? 0.2 : options.temperature, stream: true };
+  const model = requestModel(cfg, messages);
+  const body = { model, messages, temperature: options.temperature == null ? 0.2 : options.temperature, stream: true };
   const headers = { 'Content-Type': 'application/json' };
   if (String(cfg.apiKey || '').trim()) headers.Authorization = 'Bearer ' + String(cfg.apiKey).trim();
   try {
@@ -63,10 +75,10 @@ async function chatStream(llm, messages, onDelta, options = {}) {
         } catch { /* 忽略非 JSON 行 */ }
       }
     }
-    return { ok: true, content: full };
+    return { ok: true, content: full, model };
   } catch (error) {
     return { ok: false, error: String(error && error.message || error), code: 'LLM_REQUEST_FAILED' };
   }
 }
 
-module.exports = { chat, chatStream, isConfigured, normalizeBase };
+module.exports = { chat, chatStream, isConfigured, normalizeBase, visionModel, requestModel };

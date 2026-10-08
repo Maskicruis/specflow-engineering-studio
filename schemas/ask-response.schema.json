@@ -74,6 +74,9 @@
         "question": {
           "type": "string"
         },
+        "model": { "type": "string", "description": "本轮实际调用的模型（包含图片时可能是图像模型）" },
+        "images": { "type": "array", "items": { "$ref": "chat-image.schema.json" } },
+        "imageContext": { "type": ["object", "null"], "description": "图像识别的检索摘要，不属于规范依据", "properties": { "text": { "type": "string" }, "searchTerms": { "type": "string" }, "model": { "type": "string" } } },
         "conversationId": {
           "type": "string",
           "description": "会话 id（用于回溯/联动）"

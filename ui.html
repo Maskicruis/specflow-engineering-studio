@@ -66,7 +66,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 /* Slightly larger optical sizes and system text rendering improve legibility on high-DPI displays. */
 .btn,input,select,textarea{font-size:12px}.btn{min-height:32px}.muted,.field-help,.studio-state,.studio-field label,.tool-copy p,.tool-meta,.tool-section-head p,.tool-section-head>span,.monitor-meta,.monitor-item-url,.app-dialog-help{font-size:11px}.nav-item span,.recent-title,.group-item .group-name{font-size:12px}.assistant-empty p{font-size:12px}.assistant-footer .composer textarea{min-height:58px;font-size:14px}.assistant-footer .qa-status,.chat-mode-note{font-size:11px}.engine-badge,.nav-key,.sidebar-new-chat kbd{font-size:10px}.library-table th{font-size:11px}.library-table{font-size:12px}
 ::-webkit-scrollbar{width:11px;height:11px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background:color-mix(in srgb,var(--text-3) 45%,transparent);background-clip:padding-box}::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--text-3) 68%,transparent);background-clip:padding-box}
-</style><link rel="stylesheet" href="/app/workspace.css"><link rel="stylesheet" href="/app/brand-theme.css"></head><body>
+</style><link rel="stylesheet" href="/app/workspace.css"><link rel="stylesheet" href="/app/brand-theme.css"><link rel="stylesheet" href="/app/chat-images.css"></head><body>
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><img src="/brand/specflow-mark.svg" alt=""></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Rail · New Energy</small></div></div>
   <div class="desktop-runtime"><span class="pulse"></span><span id="desktopRuntime">正在启动本地服务…</span></div>
@@ -116,9 +116,11 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
           <div id="assistantEmpty" class="assistant-empty"><div class="assistant-symbol"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14 9l5.5 2-5.5 2-2 5.5-2-5.5-5.5-2L10 9l2-5.5Z" stroke-width="1.5" stroke-linejoin="round"/></svg></div><h1>开始查证工程文档</h1><p>提出规范条文、设计参数或技术要求问题。回答会保留页码和坐标，可直接回到 PDF 原文核查。</p></div>
           <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
         </div></div>
-        <div class="assistant-footer"><div class="composer">
-          <textarea id="q" rows="2" aria-label="向知识库提问" placeholder="询问规范条文、设计要求或研究结论…"></textarea>
-          <div class="composer-tools"><select id="qMode" title="知识来源" aria-label="知识来源"><option value="auto">智能问答</option><option value="knowledge">仅资料库</option><option value="general">通用对话</option></select><select id="qScenario" title="问答场景" aria-label="问答场景"></select><select id="qScope" title="检索范围" aria-label="检索范围"></select><span class="composer-hint">Enter 发送 · Shift + Enter 换行</span><button class="send-btn" data-act="ask" aria-label="发送问题" title="发送"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 14-7-5 14-2.5-5.5L5 12Z" stroke-width="1.8" stroke-linejoin="round"/><path d="m11.5 13.5 3-3" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
+        <div class="assistant-footer"><div id="chatComposer" class="composer">
+          <div id="chatAttachments" class="chat-attachments" hidden aria-label="待发送的图片附件"></div><div id="chatAttachmentState" class="chat-attachment-state" aria-live="polite"></div>
+          <textarea id="q" rows="2" aria-label="向知识库提问，可粘贴图片" placeholder="输入问题，或粘贴 / 拖入图片…"></textarea>
+          <input id="chatImagePicker" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
+          <div class="composer-tools"><button id="attachImageButton" class="chat-attach-btn" type="button" aria-label="添加图片" title="添加图片 · 可粘贴或拖入"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke-width="1.8" stroke-linecap="round"/></svg></button><select id="qMode" title="知识来源" aria-label="知识来源"><option value="auto">智能问答</option><option value="knowledge">仅资料库</option><option value="general">通用对话</option></select><select id="qScenario" title="问答场景" aria-label="问答场景"></select><select id="qScope" title="检索范围" aria-label="检索范围"></select><span class="composer-hint">Ctrl + V 图片 · Enter 发送</span><button id="sendQuestionButton" class="send-btn" data-act="ask" aria-label="发送问题" title="Enter 发送 · Shift + Enter 换行"><svg viewBox="0 0 24 24" fill="none"><path d="m5 12 14-7-5 14-2.5-5.5L5 12Z" stroke-width="1.8" stroke-linejoin="round"/><path d="m11.5 13.5 3-3" stroke-width="1.8" stroke-linecap="round"/></svg></button></div>
         </div><div id="qState" class="muted qa-status" aria-live="polite"></div></div>
       </section>
       <section id="toolsSection" class="workspace-page tools-page" data-workspace-page="tools">
@@ -173,7 +175,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
             </section>
             <section class="settings-pane" data-settings-pane="model">
               <header class="settings-pane-head"><h3>模型接口</h3><p>配置兼容 OpenAI 协议的对话与向量服务。</p></header>
-              <div class="settings-section"><div class="settings-section-title">OpenAI 兼容接口</div><div class="llm-fields"><input id="llmBase" class="wide" placeholder="https://api.deepseek.com/v1"><input id="llmModel" placeholder="对话模型，如 deepseek-chat"><input id="llmEmbed" placeholder="向量模型（可选）"><input id="llmKey" class="wide" type="password" autocomplete="off" placeholder="API Key（留空保留已保存密钥）"><input id="llmTimeout" class="wide" type="number" min="5000" max="600000" step="1000" placeholder="请求超时，毫秒"></div><div class="settings-actions"><button class="btn btn-primary" data-act="saveLlm">保存模型设置</button><button class="btn" data-act="clearLlmKey">清除密钥</button></div><div id="llmState" class="field-help"></div></div>
+              <div class="settings-section"><div class="settings-section-title">OpenAI 兼容接口</div><div class="llm-fields"><input id="llmBase" class="wide" aria-label="模型接口地址" placeholder="https://api.deepseek.com/v1"><input id="llmModel" aria-label="对话模型" placeholder="对话模型，如 deepseek-flash"><input id="llmEmbed" aria-label="向量模型" placeholder="向量模型（可选）"><input id="llmVision" class="wide" aria-label="图像模型（可选）" placeholder="图像模型（可选，如 deepseek-flash）"><input id="llmKey" class="wide" type="password" autocomplete="off" placeholder="API Key（留空保留已保存密钥）"><input id="llmTimeout" class="wide" type="number" min="5000" max="600000" step="1000" placeholder="请求超时，毫秒"></div><div class="field-help">DeepSeek 官方接口的图片对话自动使用 deepseek-flash。其他兼容接口可填写图像模型；留空则使用对话模型。图片可通过粘贴、拖入或输入框左下角“＋”添加。</div><div class="settings-actions"><button class="btn btn-primary" data-act="saveLlm">保存模型设置</button><button class="btn" data-act="clearLlmKey">清除密钥</button></div><div id="llmState" class="field-help"></div></div>
             </section>
             <section class="settings-pane desktop-only" data-settings-pane="integration">
               <header class="settings-pane-head"><h3>连接 DeepSeek Harness Studio</h3><p>安装知识工具和一键审查 Skill；不启动、不嵌入也不修改 Harness Studio 源码。</p></header>
@@ -210,8 +212,10 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
   <div class="hd"><span class="reader-label">Source review</span><b id="mtitle"></b><span id="mkw" class="kw"></span><span style="flex:1"></span><button class="btn reader-close" data-act="close">关闭阅读器</button></div>
   <div class="rbody"><div class="mdcol" id="mleft"></div><div class="pdfcol" id="vbox"></div></div>
 </div>
+<div id="chatImageViewer" class="chat-image-viewer" hidden><button class="chat-image-backdrop" data-close-chat-image aria-label="关闭图片预览" tabindex="-1"></button><section class="chat-image-dialog" role="dialog" aria-modal="true" aria-labelledby="chatImageTitle"><header class="chat-image-head"><strong id="chatImageTitle">图片预览</strong><button id="closeChatImage" class="btn" data-close-chat-image>关闭预览</button></header><div class="chat-image-content"><img id="chatImageFull" alt="图片预览"></div></section></div>
+<script src="/app/chat-images.js"></script>
 <script>
-var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
+var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], QA_BUSY=false, SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
 try{ document.documentElement.setAttribute('data-theme',localStorage.getItem('kb-theme')||'dark'); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 function api(p,o){ return fetch('/api/'+p,o).then(async function(r){ var body=await r.json().catch(function(){return {};}); if(!r.ok) throw new Error((body.error&&body.error.message)||body.msg||r.status); return body; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -245,7 +249,7 @@ function hydrateSettings(settings){
   set('parserBackend',parser.backend||'pipeline'); set('parserMethod',parser.method||'auto'); set('parserLanguage',parser.language||'ch'); set('modelSource',parser.modelSource||'modelscope');
   document.getElementById('parseTables').checked=parser.parseTables!==false;
   document.getElementById('parseFormula').checked=parser.parseFormula===true;
-  set('llmBase',llm.baseUrl||''); set('llmModel',llm.model||''); set('llmEmbed',llm.embeddingModel||''); set('llmTimeout',llm.timeoutMs||120000);
+  set('llmBase',llm.baseUrl||''); set('llmModel',llm.model||''); set('llmEmbed',llm.embeddingModel||''); set('llmVision',llm.visionModel||''); set('llmTimeout',llm.timeoutMs||120000);
   SETTINGS_LOADED=true;
 }
 async function load(){
@@ -430,7 +434,7 @@ async function loadLlmState(){
   try{
     var s=await api('v1/llm'); var d=s.data||s;
     var st=document.getElementById('llmState');
-    if(st) st.textContent=(d.configured?'LLM 已配置：':'未配置 LLM（当前为检索模式）：')+(d.baseUrl||'—')+(d.model?(' · '+d.model):'')+(d.hasKey?' · 密钥已保存':' · 无密钥');
+    if(st) st.textContent=(d.configured?'LLM 已配置：':'未配置 LLM（当前为检索模式）：')+(d.baseUrl||'—')+(d.model?(' · '+d.model):'')+(d.visionModel?' · 图像：'+d.visionModel:'')+(d.hasKey?' · 密钥已保存':' · 无密钥');
     var modelButton=document.getElementById('modelTitleButton'), modelLabel=document.getElementById('modelTitleLabel');
     if(modelLabel) modelLabel.textContent=d.configured?(d.model||'模型已配置'):'模型未配置';
     if(modelButton){ modelButton.className='title-tool title-balance '+(d.configured?'ok':'bad'); modelButton.title=d.configured?('独立模型：'+(d.model||d.baseUrl||'已配置')):'点击配置独立 LLM 模型'; }
@@ -443,10 +447,11 @@ async function saveLlm(){
   var model=document.getElementById('llmModel').value.trim();
   var apiKey=document.getElementById('llmKey').value.trim();
   var embeddingModel=document.getElementById('llmEmbed').value.trim();
+  var visionModel=document.getElementById('llmVision').value.trim();
   var timeoutMs=Number(document.getElementById('llmTimeout').value)||120000;
   try{
     if(timeoutMs<5000||timeoutMs>600000) throw new Error('超时时间应在 5000–600000 毫秒之间');
-    var llm={baseUrl:baseUrl,model:model,embeddingModel:embeddingModel,timeoutMs:timeoutMs};
+    var llm={baseUrl:baseUrl,model:model,embeddingModel:embeddingModel,visionModel:visionModel,timeoutMs:timeoutMs};
     if(apiKey) llm.apiKey=apiKey;
     await api('v1/settings',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({llm:llm})});
     document.getElementById('llmKey').value=''; SETTINGS_LOADED=false; await load();
@@ -507,10 +512,11 @@ function citationCard(c){
     +'<div class="s">'+esc(String(c.snippet||'').slice(0,240))+'</div></a>';
 }
 function scrollConversation(){ var stream=document.querySelector('.assistant-stream'); if(stream) requestAnimationFrame(function(){stream.scrollTop=stream.scrollHeight;}); }
-function appendUserTurn(text){
+function appendUserTurn(text,images){
   var box=document.getElementById('chatMessages');
-  var turn=document.createElement('div'); turn.className='chat-turn user'; turn.innerHTML='<div class="chat-user-bubble">'+esc(text)+'</div>';
+  var turn=document.createElement('div'); turn.className='chat-turn user'; turn.innerHTML='<div class="chat-user-bubble">'+(window.SpecFlowChatImages?SpecFlowChatImages.turnHtml(images):'')+esc(text)+'</div>';
   box.appendChild(turn); scrollConversation();
+  return turn;
 }
 function appendAssistantTurn(){
   var box=document.getElementById('chatMessages');
@@ -535,11 +541,12 @@ async function loadConversations(){
 }
 function assistantLabel(turn){ return turn.mode==='clarification'?'需要补充信息':turn.grounding==='general'?'通用模型回答':(turn.mode==='retrieval'?'资料检索结果':'资料库增强回答'); }
 async function openConversation(id){
+  if(QA_BUSY){ document.getElementById('qState').textContent='请等待当前回答完成后再切换对话。'; return; }
   try{
     var response=await api('v1/conversations/'+encodeURIComponent(id)); var record=response.data||response; var turns=Array.isArray(record.turns)?record.turns:[];
-    CURRENT_CONVERSATION_ID=record.id; CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML='';
+    CURRENT_CONVERSATION_ID=record.id; CHAT_HISTORY=[]; SpecFlowChatImages.clear(); document.getElementById('q').value=''; document.getElementById('chatMessages').innerHTML='';
     var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display=turns.length?'none':'block';
-    turns.forEach(function(item){ appendUserTurn(item.question||''); CHAT_HISTORY.push({role:'user',content:item.question||''}); var turn=appendAssistantTurn(); var text=item.answer||item.note||item.error||''; turn.note.textContent=assistantLabel(item); turn.answer.innerHTML=answerHtml(text,item.citations||[]); turn.cites.innerHTML=(item.citations||[]).map(citationCard).join(''); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); });
+    turns.forEach(function(item){ appendUserTurn(item.question||'',item.images||[]); CHAT_HISTORY.push({role:'user',content:item.question||'',images:item.images||[]}); var turn=appendAssistantTurn(); var text=item.answer||item.note||item.error||''; turn.note.textContent=assistantLabel(item)+(item.model?' · '+item.model:''); turn.answer.innerHTML=answerHtml(text,item.citations||[]); turn.cites.innerHTML=(item.citations||[]).map(citationCard).join(''); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); });
     if(record.retrievalMode) document.getElementById('qMode').value=record.retrievalMode;
     if(record.scenario) document.getElementById('qScenario').value=record.scenario;
     var scope=record.groupId!==undefined&&record.groupId!==null?'group:'+record.groupId:(record.docIds&&record.docIds.length===1?'doc:'+record.docIds[0]:'all');
@@ -548,37 +555,47 @@ async function openConversation(id){
   }catch(e){ alert('打开对话失败：'+e.message); }
 }
 async function deleteConversation(id){
+  if(QA_BUSY) return;
   if(!confirm('删除这条对话记录？此操作不会删除引用的文档。')) return;
   try{ await api('v1/conversations/'+encodeURIComponent(id),{method:'DELETE'}); if(CURRENT_CONVERSATION_ID===id) newChat(); await loadConversations(); }
   catch(e){ alert('删除对话失败：'+e.message); }
 }
 function newChat(){
+  if(QA_BUSY){ document.getElementById('qState').textContent='请等待当前回答完成后再新建对话。'; return; }
+  SpecFlowChatImages.clear(); document.getElementById('q').value=''; document.getElementById('q').style.height='';
   CURRENT_CONVERSATION_ID=''; CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML=''; document.getElementById('qState').textContent=''; renderRecentConversations();
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='block'; showPage('assistant'); document.getElementById('q').focus();
 }
 function syncQaMode(){ var general=document.getElementById('qMode').value==='general'; var scope=document.getElementById('qScope'); if(scope){scope.disabled=general;scope.title=general?'通用对话不检索资料库':'检索范围';} }
 async function askQuestion(){
+  if(QA_BUSY) return;
+  if(!SpecFlowChatImages.ready()) return;
   var q=document.getElementById('q').value.trim();
-  if(!q){ document.getElementById('qState').textContent='请输入问题'; return; }
+  if(!q&&!SpecFlowChatImages.count()){ document.getElementById('qState').textContent='请输入问题或添加图片'; return; }
+  var originalQuestion=q;
+  if(!q) q='请分析这些图片中的内容。';
   var scenario=document.getElementById('qScenario').value||'design';
   var retrievalMode=document.getElementById('qMode').value||'auto';
   var scope=document.getElementById('qScope').value||'';
-  var history=CHAT_HISTORY.slice(-12);
-  appendUserTurn(q); CHAT_HISTORY.push({role:'user',content:q}); document.getElementById('q').value='';
+  var images=SpecFlowChatImages.take();
+  QA_BUSY=true; SpecFlowChatImages.setBusy(true); document.getElementById('sendQuestionButton').disabled=true; document.getElementById('q').readOnly=true;
+  var userTurn=appendUserTurn(q,images); document.getElementById('q').value=''; document.getElementById('q').style.height='';
   var turn=appendAssistantTurn();
-  document.getElementById('qState').textContent=retrievalMode==='general'?'模型生成中…':'检索并生成中…';
+  document.getElementById('qState').textContent=images.length?(retrievalMode==='general'?'正在分析图片…':'正在识别图片、检索并生成…'):(retrievalMode==='general'?'模型生成中…':'检索并生成中…');
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='none';
   try{
-    var payload={question:q,scenario:scenario,retrievalMode:retrievalMode,conversationId:CURRENT_CONVERSATION_ID||undefined,history:history}; if(retrievalMode!=='general') Object.assign(payload,scopePayload(scope));
+    var payload={question:q,images:images.map(function(image){return image.id;}),scenario:scenario,retrievalMode:retrievalMode,conversationId:CURRENT_CONVERSATION_ID||undefined}; if(retrievalMode!=='general') Object.assign(payload,scopePayload(scope));
     var r=await fetch('/api/v1/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     var body=await r.json(); var d=body.data||body;
+    if(!r.ok||body.ok===false||d.ok===false) throw new Error(typeof d.error==='string'?d.error:((body.error&&body.error.message)||'模型请求失败'));
     var n=(d.citations||[]).length;
     var label=d.mode==='clarification'?'需要补充信息':d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
     document.getElementById('qState').textContent=label+(n?' · 引用 '+n+' 条':'');
     var text=d.answer||d.note||d.error||'';
-    turn.note.textContent=label; turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
-    if(d.conversationId) CURRENT_CONVERSATION_ID=d.conversationId; if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
-  }catch(e){ turn.note.textContent='请求失败'; turn.answer.textContent='失败：'+e.message; document.getElementById('qState').textContent='失败：'+e.message; }
+    turn.note.textContent=label+(d.model?' · '+d.model:''); turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
+    CHAT_HISTORY.push({role:'user',content:q,images:images}); if(d.conversationId) CURRENT_CONVERSATION_ID=d.conversationId; if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
+  }catch(e){ userTurn.remove(); turn.note.textContent='请求失败'; turn.answer.textContent='失败：'+e.message+'。问题和图片已恢复到输入框，可重试。'; document.getElementById('qState').textContent='失败：'+e.message; document.getElementById('q').value=originalQuestion; SpecFlowChatImages.restore(images); }
+  finally{ QA_BUSY=false; SpecFlowChatImages.setBusy(false); document.getElementById('sendQuestionButton').disabled=false; document.getElementById('q').readOnly=false; document.getElementById('q').focus(); }
 }
 function toggleTheme(){
   var next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
@@ -757,7 +774,7 @@ document.addEventListener('click',function(e){
   else if(act==='edittbl'){ var wrap=t.closest('.tblwrap'); var et=wrap?wrap.querySelector('.edtable'):null; if(et){ et.contentEditable='true'; et.focus(); } }
   else if(act==='fixsav'){ var wrap=t.closest('.tblwrap'); var et=wrap?wrap.querySelector('.edtable'):null; if(et){ var table=et.querySelector('table'); var cleaned=table?safeTableHtml(table.outerHTML):et.textContent; saveFix(t.getAttribute('data-idx'), cleaned); et.contentEditable='false'; } }
 });
-document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); askQuestion(); } });
+document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){ e.preventDefault(); askQuestion(); } });
 document.getElementById('q').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,180)+'px'; });
 document.getElementById('file').addEventListener('change',updateFileMeta);
 document.getElementById('dbSearch').addEventListener('input',render);

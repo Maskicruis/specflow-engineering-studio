@@ -6,6 +6,7 @@ const path = require('node:path');
 const { DATA, ROOT } = require('./config');
 const { KnowledgeBaseService } = require('./service');
 const { toLegacyItems } = require('./transform');
+const { IMAGE_LIMITS } = require('./chat-images');
 
 let sea = null;
 let runningAsSea = false;
@@ -206,7 +207,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       }
       if (pathname.startsWith('/app/')) {
         const filename = path.basename(pathname);
-        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
+        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'chat-images.js', 'chat-images.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
       if (pathname.startsWith('/tool-assets/')) {
@@ -253,6 +254,17 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
 
       // 能力与接口清单（联动/发现预留）
       if (pathname === '/api/v1/capabilities' && request.method === 'GET') return success(response, service.capabilities());
+
+      if (pathname === '/api/v1/chat/images' && request.method === 'POST') {
+        const filename = decodeFileName(request.headers['x-file-name']) || '图片';
+        return success(response, service.uploadChatImage(filename, await readBody(request, IMAGE_LIMITS.maxImageBytes)), 201);
+      }
+      const chatImage = pathname.match(/^\/api\/v1\/chat\/images\/([^/]+)$/);
+      if (chatImage && request.method === 'GET') {
+        const image = service.chatImage(decodeURIComponent(chatImage[1]));
+        return sendFile(request, response, image.file, image.metadata.mime);
+      }
+      if (chatImage && request.method === 'DELETE') return success(response, service.deleteChatImage(decodeURIComponent(chatImage[1])));
 
       // SSE 流式问答
       if (pathname === '/api/v1/ask/stream' && request.method === 'POST') {

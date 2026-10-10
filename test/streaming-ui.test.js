@@ -12,22 +12,24 @@ function fixture(fetch) {
   const node = (value = '') => ({ value, innerHTML: '', textContent: '', style: {}, attrs: {}, setAttribute(k, v) { this.attrs[k] = v; }, focus() {} });
   const nodes = { q: node('问题'), qScenario: node('design'), qMode: node('general'), qScope: node('all'), sendQuestionButton: node(), qState: node(), assistantEmpty: node() };
   const turn = { answer: node(), note: node(), cites: node(), reasoning: node(), reasoningText: node() };
+  const renderWaiters = [];
   let restored = false;
   const context = { QA_BUSY: false, QA_CONTROLLER: null, CURRENT_CONVERSATION_ID: '', CHAT_HISTORY: [], AbortController, fetch, SpecFlowStream: stream,
     SpecFlowChatImages: { ready: () => true, count: () => 0, take: () => [], setBusy() {}, restore() { restored = true; } },
     document: { getElementById: id => nodes[id] }, appendUserTurn: () => ({ remove() {} }), appendAssistantTurn: () => turn,
     answerHtml: (text, citations) => text.replace(/\[1\]/g, citations.length ? '<a href="/citation">[1]</a>' : '[1]'), citationCard: () => '<a>citation</a>',
-    requestAnimationFrame: callback => setImmediate(callback), scrollConversation() {}, loadConversations() {}, scopePayload: () => ({}) };
+    requestAnimationFrame: callback => setImmediate(() => { callback(); for (const resolve of renderWaiters.splice(0)) resolve(); }), scrollConversation() {}, loadConversations() {}, scopePayload: () => ({}) };
   vm.createContext(context); vm.runInContext(code, context);
-  return { context, nodes, turn, get restored() { return restored; } };
+  return { context, nodes, turn, nextRender: () => new Promise(resolve => renderWaiters.push(resolve)), get restored() { return restored; } };
 }
 function frame(controller, value) { controller.enqueue(new TextEncoder().encode('data: ' + JSON.stringify(value) + '\n\n')); }
 
-test('the real frontend handler renders partial text and inline links before stream completion', async () => {
+test('the real frontend handler renders partial text and inline links before stream completion', { timeout: 5000 }, async () => {
   let controller; const body = new ReadableStream({ start(value) { controller = value; } });
   const f = fixture(async () => new Response(body)); const pending = f.context.askQuestion();
+  const rendered = f.nextRender();
   frame(controller, { type: 'citations', citations: [{ n: 1 }] }); frame(controller, { type: 'reasoning', text: '分析' }); frame(controller, { type: 'delta', text: '第一段[1]' });
-  await new Promise(resolve => setTimeout(resolve, 20));
+  await rendered;
   assert.match(f.turn.answer.innerHTML, /第一段<a/); assert.equal(f.turn.reasoningText.textContent, '分析');
   assert.equal(f.context.QA_BUSY, true); assert.equal(f.nodes.sendQuestionButton.attrs['data-act'], 'stopAnswer');
   frame(controller, { type: 'delta', text: '第二段' }); frame(controller, { type: 'done', mode: 'llm', grounding: 'general' }); frame(controller, { type: 'saved', conversationId: 'c_test' }); controller.close();

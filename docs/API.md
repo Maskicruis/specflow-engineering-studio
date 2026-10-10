@@ -48,6 +48,14 @@
 
 仅允许计划中的段落，role 为 `keep/body/heading1..4`。文字建议不默认采用；设置 `applyText=true` 时还必须有 `confirmTextEdits=true`。完成状态提供 `outputUrl/reportUrl`。不得传任意文件路径、宏名或模型生成代码。原文件不覆盖；文档内容不构成执行授权。
 
+可在创建请求中增加 `layout`：
+
+```json
+{"layout":{"cover":{"mode":"standard","preset":"engineering","project":"新能源项目","title":"初步设计说明书","company":"用户指定单位","date":"2026 年 10 月"},"toc":{"mode":"rebuild","levels":3},"imageCells":true}}
+```
+
+省略时保留封面和目录，启用图片单元格。`cover.mode=standard` 或 `toc.mode=rebuild` 时，即使 `mode=vba` 也会先检查结构，返回 `awaiting-review` 与 `frontMatter` 范围 / 预览 / 警告，**不会立即排版**。确认后向 `/apply` 提交 `{"confirmApply":true,"confirmLayout":true,"changes":[]}`；LLM 模式同时保留通常的结构建议审核。目录范围不明确时拒绝重建。`layoutReport` 记录封面 / 目录处理及图片单元格数量，详细报告 `schemaVersion=2`；输出为含原生 TOC 域、不含 VBA 的 DOCX。
+
 检索前会返回 `queryPlan`：其中 `expandedTerms` 是补充的规范术语；`needsClarification=true` 时，调用方应先向用户询问 `clarification.questions`，再把原问题与回答合并后重新检索。例如“综合楼”会扩展为“民用建筑群、民用建筑、公共建筑”等术语，但在确定防火间距或火灾危险性分类前仍需用途、高度、生产储存内容和相邻建筑条件。
 
 `/api/v1/ask` 响应（节选）：

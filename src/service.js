@@ -624,7 +624,7 @@ class KnowledgeBaseService {
         { method: 'POST', path: '/api/v1/word-format/files', desc: '接收 Word 文档副本（原始二进制，X-File-Name）' },
         { method: 'GET/POST', path: '/api/v1/word-format/jobs', desc: 'Word 格式任务列表 / 创建任务' },
         { method: 'GET', path: '/api/v1/word-format/jobs/:id', desc: 'Word 任务状态与待审核计划' },
-        { method: 'POST', path: '/api/v1/word-format/jobs/:id/apply', desc: '确认结构 / 文字建议并运行 VBA' },
+        { method: 'POST', path: '/api/v1/word-format/jobs/:id/apply', desc: '确认结构 / 文字建议与封面、目录识别范围（confirmLayout），再运行 VBA' },
         { method: 'POST', path: '/api/v1/word-format/jobs/:id/cancel', desc: '取消 Word 任务' },
         { method: 'GET', path: '/api/v1/word-format/jobs/:id/events', desc: 'Word 任务进度与模型审查 SSE' },
         { method: 'GET', path: '/api/v1/word-format/jobs/:id/output', desc: '下载无宏标准化 DOCX' },

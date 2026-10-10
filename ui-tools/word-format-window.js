@@ -2,16 +2,35 @@
   'use strict';
   var file = null, job = null, feed = null, environment = null, busy = false, checking = false, statusRequest = null;
   var guide = window.WordFormatGuide;
+  var layoutIds = ['wordCoverMode', 'wordCoverPreset', 'wordCoverProject', 'wordCoverTitle', 'wordCoverCompany', 'wordCoverAuthor', 'wordCoverReviewer', 'wordCoverApprover', 'wordCoverDate', 'wordCoverNumber', 'wordRebuildToc', 'wordTocLevels', 'wordImageCells', 'saveWordCoverPreset'];
+  function layoutOptions() {
+    var cover = { mode: el('wordCoverMode').value || 'keep', preset: el('wordCoverPreset').value || 'engineering' };
+    ['project', 'title', 'company', 'author', 'reviewer', 'approver', 'date', 'number'].forEach(function (key) { cover[key] = el('wordCover' + key[0].toUpperCase() + key.slice(1)).value.trim(); });
+    return { cover: cover, toc: { mode: el('wordRebuildToc').checked ? 'rebuild' : 'keep', levels: Number(el('wordTocLevels').value) || 3 }, imageCells: el('wordImageCells').checked };
+  }
+  function syncLayout() { el('wordCoverFields').hidden = el('wordCoverMode').value !== 'standard'; el('wordTocLevelsField').hidden = !el('wordRebuildToc').checked; sync(); }
+  function needsLayoutReview() { return !!job && !!job.layout && (job.layout.cover.mode === 'standard' || job.layout.toc.mode === 'rebuild'); }
   var states = { queued: '等待处理', inspecting: '正在读取文档结构', analyzing: '模型正在分析结构', 'awaiting-review': '请审核建议后继续', formatting: '正在统一全文格式', completed: '已完成，可以下载副本', cancelled: '任务已取消', error: '任务未完成' };
   function el(id) { return document.getElementById(id); }
   function escape(value) { return String(value || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
   function state(message, error) { el('wordState').textContent = message || ''; el('wordState').classList.toggle('error', !!error); }
-  function readiness() { return guide.readiness({ file: file, job: job, busy: busy, checking: checking, environment: environment, mode: el('wordMode').value, confirmVba: el('confirmWordVba').checked, confirmLlm: el('confirmWordLlm').checked }); }
+  function readiness() {
+    var ready = guide.readiness({ file: file, job: job, busy: busy, checking: checking, environment: environment, mode: el('wordMode').value, confirmVba: el('confirmWordVba').checked, confirmLlm: el('confirmWordLlm').checked });
+    if (ready.ready && el('wordCoverMode').value === 'standard' && !el('wordCoverTitle').value.trim()) return { ready: false, step: 2, hint: '请填写标准封面的文档名称。' };
+    if (ready.ready && el('wordMode').value !== 'vba-llm' && (el('wordCoverMode').value === 'standard' || el('wordRebuildToc').checked)) ready.hint = '准备就绪：先识别封面与目录，在右侧核对范围后再排版。';
+    return ready;
+  }
   function sync() {
     var value = readiness(), locked = busy || guide.active(job) || !!job && job.state === 'awaiting-review';
+    var structure = el('wordCoverMode').value === 'standard' || el('wordRebuildToc').checked;
+    if (el('wordMode').value !== 'vba-llm') {
+      el('startWord').textContent = structure ? '先识别封面与目录' : '开始统一格式';
+      el('wordStep3Label').textContent = structure ? '核对并排版' : '统一格式';
+      el('wordWelcomeMode').textContent = structure ? '勾选 VBA 授权，点击「先识别封面与目录」，在右侧核对范围并确认后继续排版。' : '保持推荐模式，勾选 VBA 授权，点击「开始统一格式」。';
+    }
     el('wordNextHint').textContent = value.hint; el('startWord').disabled = !value.ready;
     el('newWordTask').hidden = !job; el('newWordTask').disabled = locked;
-    ['chooseWordFile', 'wordFile', 'wordMode', 'confirmWordVba', 'confirmWordLlm', 'wordInstructions'].forEach(function (id) { el(id).disabled = locked; });
+    ['chooseWordFile', 'wordFile', 'wordMode', 'confirmWordVba', 'confirmWordLlm', 'wordInstructions'].concat(layoutIds).forEach(function (id) { el(id).disabled = locked; });
     el('wordDrop').classList.toggle('locked', locked);
     el('detectWord').disabled = checking || locked;
     for (var index = 1; index <= 4; index++) {
@@ -52,6 +71,7 @@
     try {
       file = await api('files', { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'X-File-Name': encodeURIComponent(input.name) }, body: input });
       el('wordFileInfo').textContent = file.name + ' · ' + (file.size / 1048576).toFixed(1) + ' MB';
+      el('wordCoverTitle').value = file.name.replace(/\.(docx|doc)$/i, '').slice(0, 100);
       state('文档已接收。请按上面的「下一步」提示继续。');
     } catch (error) { el('wordFileInfo').textContent = '未能接收文件，请重新选择'; state(error.message, true); }
     finally { busy = false; sync(); }
@@ -86,8 +106,10 @@
   function reviewCount() {
     var changes = selectedChanges(), textCount = changes.filter(function (item) { return item.applyText; }).length;
     el('wordSelectedCount').textContent = '采用 ' + changes.length + ' 项建议 · 文字修改 ' + textCount + ' 项';
-    el('applyWordPlan').disabled = !!textCount && !el('confirmWordText').checked;
+    var layoutBlocked = !!(needsLayoutReview() && (!el('confirmWordLayout').checked || job.layout.toc.mode === 'rebuild' && job.frontMatter && job.frontMatter.ambiguousToc));
+    el('applyWordPlan').disabled = !!textCount && !el('confirmWordText').checked || layoutBlocked;
     el('wordReviewHint').textContent = textCount && !el('confirmWordText').checked ? '勾选了文字建议，请另外勾选下方文字修订授权；也可以取消文字建议。' : job && job.plan && job.plan.length ? '审核下方建议。只需排版时，可取消全部建议后继续。' : '模型没有提出可应用的结构建议。仍可点击下方按钮执行全文规则排版。';
+    if (needsLayoutReview()) el('wordReviewHint').textContent = layoutBlocked ? '先核对封面与目录识别结果，勾选上方确认；识别不明确时请取消并选择保留原目录。' : '封面与目录范围已确认，可以继续排版。';
   }
   function review(plan) {
     var labels = { keep: '保留原结构', body: '正文', heading1: '一级标题', heading2: '二级标题', heading3: '三级标题', heading4: '四级标题' };
@@ -101,17 +123,34 @@
   }
   function render(value) {
     job = value;
+    if (value.layout) {
+      el('wordCoverMode').value = value.layout.cover.mode; el('wordCoverPreset').value = value.layout.cover.preset;
+      ['project', 'title', 'company', 'author', 'reviewer', 'approver', 'date', 'number'].forEach(function (key) { el('wordCover' + key[0].toUpperCase() + key.slice(1)).value = value.layout.cover[key] || ''; });
+      el('wordRebuildToc').checked = value.layout.toc.mode === 'rebuild'; el('wordTocLevels').value = String(value.layout.toc.levels); el('wordImageCells').checked = value.layout.imageCells;
+      el('wordCoverFields').hidden = value.layout.cover.mode !== 'standard'; el('wordTocLevelsField').hidden = value.layout.toc.mode !== 'rebuild';
+    }
     file = { id: value.fileId, name: value.name };
     el('wordFileInfo').textContent = value.name + ' · 已接收副本';
     el('wordJobTitle').textContent = job.name; el('wordJobStatus').textContent = states[job.state] || job.state;
     var active = guide.active(job);
     el('wordWelcome').hidden = true; el('wordProgress').hidden = !active; el('wordProgressText').textContent = states[job.state] || job.state;
-    el('cancelWordJob').hidden = !active;
+    el('cancelWordJob').hidden = !active && job.state !== 'awaiting-review';
     el('wordAnalysis').hidden = !job.analysis; el('wordAnalysisText').textContent = job.analysis || '';
     el('wordReview').hidden = job.state !== 'awaiting-review'; el('wordCompleted').hidden = job.state !== 'completed';
     el('wordJobError').hidden = !['error', 'cancelled'].includes(job.state);
-    if (job.state === 'awaiting-review') { el('wordSummary').textContent = job.summary || '请选择要采用的结构建议。'; el('wordTruncated').hidden = !job.truncated; review(job.plan || []); }
-    if (job.state === 'completed') { el('downloadWord').href = job.outputUrl; el('downloadWordReport').href = job.reportUrl; el('wordVbaReport').textContent = job.report || ''; state('已完成，请在右侧下载标准化副本。'); }
+    el('wordLayoutReview').hidden = !needsLayoutReview();
+    if (job.state === 'awaiting-review') {
+      el('confirmWordLayout').checked = false;
+      if (needsLayoutReview()) {
+        var front = job.frontMatter || {}, messages = [];
+        if (job.layout.cover.mode === 'standard') messages.push(front.cover ? '<p><b>旧封面：第 ' + front.cover.first + '–' + front.cover.last + ' 段，将替换</b></p><pre>' + escape(front.cover.preview.join('\n')) + '</pre>' : '<p>没有可靠识别到旧封面：插入新封面，旧首页保留。</p>');
+        if (job.layout.toc.mode === 'rebuild') messages.push(front.toc ? '<p><b>旧目录：第 ' + front.toc.first + '–' + front.toc.last + ' 段，将重建为可更新目录</b></p><pre>' + escape(front.toc.preview.join('\n')) + '</pre>' : '<p>未识别到旧目录：将在正文前插入可更新目录。</p>');
+        messages = messages.concat((front.warnings || []).map(function (text) { return '<p class="word-warning">' + escape(text) + '</p>'; }));
+        el('wordLayoutSummary').innerHTML = messages.join('');
+      }
+      el('wordSummary').textContent = job.summary || '请选择要采用的结构建议。'; el('wordTruncated').hidden = !job.truncated; review(job.plan || []);
+    }
+    if (job.state === 'completed') { el('downloadWord').href = job.outputUrl; el('downloadWordReport').href = job.reportUrl; el('wordVbaReport').textContent = (job.layoutReport || '') + '\n' + (job.report || ''); state('已完成，请在右侧下载标准化副本。'); }
     if (['error', 'cancelled'].includes(job.state)) {
       el('wordJobErrorTitle').textContent = job.state === 'cancelled' ? '任务已取消' : '任务未完成';
       el('wordJobErrorText').textContent = job.error || '已停止处理，原件保持不变。';
@@ -137,7 +176,7 @@
     var ready = readiness(); if (!ready.ready) { state(ready.hint, true); return; }
     busy = true; sync();
     try {
-      var created = await api('jobs', post({ fileId: file.id, mode: el('wordMode').value, instructions: el('wordInstructions').value, confirmVba: el('confirmWordVba').checked, confirmLlm: el('wordMode').value === 'vba-llm' && el('confirmWordLlm').checked }));
+      var created = await api('jobs', post({ fileId: file.id, mode: el('wordMode').value, layout: layoutOptions(), instructions: el('wordInstructions').value, confirmVba: el('confirmWordVba').checked, confirmLlm: el('wordMode').value === 'vba-llm' && el('confirmWordLlm').checked }));
       state('任务已开始，右侧会实时显示进度。'); render(created); watch(created.id);
     } catch (error) { state(error.message, true); }
     finally { busy = false; sync(); }
@@ -145,10 +184,11 @@
   async function apply() {
     if (busy || !job || job.state !== 'awaiting-review') return;
     var changes = selectedChanges();
+    if (needsLayoutReview() && (!el('confirmWordLayout').checked || job.layout.toc.mode === 'rebuild' && job.frontMatter && job.frontMatter.ambiguousToc)) { state('请核对并确认封面、目录范围；识别不明确时请取消任务并选择保留。', true); return; }
     if (changes.some(function (item) { return item.applyText; }) && !el('confirmWordText').checked) { state('采用文字建议前，需要单独勾选文字修订授权。', true); return; }
     if (!confirm('按您审核的建议运行 VBA 并生成独立副本？未勾选的模型建议不会采用。')) return;
     busy = true; el('applyWordPlan').disabled = true; sync();
-    try { var updated = await api('jobs/' + job.id + '/apply', post({ changes: changes, confirmApply: true, confirmTextEdits: el('confirmWordText').checked })); render(updated); watch(updated.id); }
+    try { var updated = await api('jobs/' + job.id + '/apply', post({ changes: changes, confirmApply: true, confirmLayout: el('confirmWordLayout').checked, confirmTextEdits: el('confirmWordText').checked })); render(updated); watch(updated.id); }
     catch (error) { state(error.message, true); }
     finally { busy = false; if (job && job.state === 'awaiting-review') reviewCount(); sync(); }
   }
@@ -162,6 +202,13 @@
   ['confirmWordVba', 'confirmWordLlm'].forEach(function (id) { el(id).addEventListener('change', function () { state(''); sync(); }); });
   el('startWord').addEventListener('click', start); el('detectWord').addEventListener('click', detect); el('applyWordPlan').addEventListener('click', apply);
   el('wordPlanRows').addEventListener('change', reviewCount); el('confirmWordText').addEventListener('change', reviewCount);
+  el('confirmWordLayout').addEventListener('change', reviewCount);
+  layoutIds.forEach(function (id) { el(id).addEventListener('change', syncLayout); });
+  el('wordCoverTitle').addEventListener('input', sync);
+  el('saveWordCoverPreset').addEventListener('click', function () {
+    var value = layoutOptions().cover; delete value.project; delete value.title; delete value.mode; delete value.number;
+    try { localStorage.setItem('specflow-word-cover-preset', JSON.stringify(value)); state('已记住单位、编审人员和日期；下次打开本窗口自动填入。'); } catch (_) { state('本机预设暂时无法保存。', true); }
+  });
   el('wordHelpToggle').addEventListener('click', function () { el('wordHelp').hidden = !el('wordHelp').hidden; el('wordHelpToggle').setAttribute('aria-expanded', String(!el('wordHelp').hidden)); });
   el('newWordTask').addEventListener('click', function () { if (guide.active(job) || job && job.state === 'awaiting-review') return; file = null; el('wordFileInfo').textContent = '尚未选择文件'; el('confirmWordVba').checked = false; el('confirmWordLlm').checked = false; clearJob(); });
   el('retryWordTask').addEventListener('click', function () { if (!job || !['error', 'cancelled'].includes(job.state)) return; clearJob(); });
@@ -180,5 +227,10 @@
   el('wordTheme').addEventListener('click', function () { var theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('kb-theme', theme); });
   window.addEventListener('storage', function (event) { if (event.key === 'kb-theme') document.documentElement.setAttribute('data-theme', event.newValue || 'dark'); });
   window.addEventListener('beforeunload', function () { if (feed) feed.close(); });
-  syncMode(); recent(); detect();
+  try {
+    var preset = JSON.parse(localStorage.getItem('specflow-word-cover-preset') || '{}');
+    ['company', 'author', 'reviewer', 'approver', 'date'].forEach(function (key) { if (typeof preset[key] === 'string') el('wordCover' + key[0].toUpperCase() + key.slice(1)).value = preset[key].slice(0, 80); });
+    el('wordCoverPreset').value = preset.preset === 'report' ? 'report' : 'engineering';
+  } catch (_) {}
+  syncLayout(); syncMode(); recent(); detect();
 })();

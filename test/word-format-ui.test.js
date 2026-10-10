@@ -123,6 +123,26 @@ test('Word UI empty model plans still offer explicit review and full VBA formatt
   assert.equal(request.body.confirmTextEdits, false);
 });
 
+test('Word UI sends layout choices and never replaces front matter before explicit range confirmation', async () => {
+  const app = ui(); await app.settle(); await app.upload();
+  app.element('wordCoverMode').value = 'standard'; app.element('wordCoverTitle').value = '初步设计说明书';
+  app.element('wordRebuildToc').checked = true; app.element('wordImageCells').checked = true;
+  app.element('confirmWordVba').checked = true;
+  await app.event('wordCoverMode', 'change'); await app.event('startWord', 'click');
+  const submitted = app.calls.find(x => x.url.endsWith('/jobs') && x.body).body;
+  assert.equal(submitted.layout.cover.mode, 'standard'); assert.equal(submitted.layout.imageCells, true);
+  app.feeds[0].send({ job: { id: 'wj_1', fileId: 'wf_1', name: '工程.docx', state: 'awaiting-review', plan: [], layout: submitted.layout,
+    frontMatter: { cover: { first: 1, last: 5, preview: ['<script>旧封面</script>'] }, toc: null, warnings: [] } } });
+  assert.equal(app.element('wordLayoutReview').hidden, false);
+  assert.doesNotMatch(app.element('wordLayoutSummary').innerHTML, /<script>/);
+  assert.equal(app.element('applyWordPlan').disabled, true);
+  await app.event('applyWordPlan', 'click'); assert.equal(app.calls.some(x => x.url.endsWith('/apply')), false);
+  app.element('confirmWordLayout').checked = true; await app.event('confirmWordLayout', 'change');
+  assert.equal(app.element('applyWordPlan').disabled, false);
+  await app.event('applyWordPlan', 'click');
+  assert.equal(app.calls.find(x => x.url.endsWith('/apply')).body.confirmLayout, true);
+});
+
 test('Word UI requires separate text-edit consent and does not auto-apply suggestions', async () => {
   const app = ui({ environment: { ...available, llmConfigured: true } }); await app.settle(); await app.upload();
   app.element('wordMode').value = 'vba-llm'; app.element('confirmWordVba').checked = true; app.element('confirmWordLlm').checked = true;

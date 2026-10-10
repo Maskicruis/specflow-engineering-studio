@@ -7,6 +7,8 @@ $document = $null
 $ownedWordPid = 0
 $previousUpdateLinks = $null
 $baselineWordPids = @(Get-Process WINWORD -ErrorAction SilentlyContinue | ForEach-Object { $_.Id })
+$sectionEnds = @()
+$floatingAnchors = @()
 
 function Emit-WordEvent($value) { [Console]::WriteLine(($value | ConvertTo-Json -Depth 14 -Compress)) }
 function Save-WordResult($value) {
@@ -18,8 +20,18 @@ function Paragraph-Info($paragraph, [int]$index) {
     $text = $range.Text.TrimEnd([char]13, [char]7)
     $style = ''
     try { $style = [string]$range.Style.NameLocal } catch {}
-    $unsafe = $range.Fields.Count -gt 0 -or $range.InlineShapes.Count -gt 0 -or $range.OMaths.Count -gt 0 -or $range.Revisions.Count -gt 0
-    return @{ index=$index; text=$text; outlineLevel=[int]$paragraph.OutlineLevel; style=$style; inTable=[bool]$range.Information(12); editable=(-not $unsafe -and $text.Length -le 2000) }
+    $floating = @($floatingAnchors | Where-Object { $_ -ge $range.Start -and $_ -lt $range.End }).Count
+    $unsafe = $range.Fields.Count -gt 0 -or $range.InlineShapes.Count -gt 0 -or $range.OMaths.Count -gt 0 -or $range.Revisions.Count -gt 0 -or $floating -gt 0
+    $hasSection = @($sectionEnds | Where-Object { $_ -ge $range.Start -and $_ -lt $range.End }).Count -gt 0
+    return @{ index=$index; text=$text; start=[int]$range.Start; end=[int]$range.End; page=[int]$range.Information(3); breakBefore=([int]$range.ParagraphFormat.PageBreakBefore -eq -1); breakAfter=$text.Contains([string][char]12); sectionBreak=$hasSection; pictures=([int]$range.InlineShapes.Count + $floating); outlineLevel=[int]$paragraph.OutlineLevel; style=$style; inTable=[bool]$range.Information(12); editable=(-not $unsafe -and $text.Length -le 2000) }
+}
+function Mark-LayoutRange($part, [string]$name) {
+    if ($null -eq $part) { return }
+    $first = $document.Paragraphs.Item([int]$part.first)
+    $last = $document.Paragraphs.Item([int]$part.last)
+    if ($first.Range.Text.TrimEnd([char]13, [char]7) -cne [string]$part.firstText -or $last.Range.Text.TrimEnd([char]13, [char]7) -cne [string]$part.lastText) { throw 'Front matter changed since review. Inspect the document again.' }
+    $range = $document.Range([int]$part.start, [int]$part.end)
+    $null = $document.Bookmarks.Add($name, $range)
 }
 
 try {
@@ -45,6 +57,9 @@ try {
         Emit-WordEvent @{type='progress';message='Word document opened'}
         if ($document.ProtectionType -ne -1) { throw 'Document is protected. Remove protection from a copy first.' }
         if ($request.action -eq 'inspect') {
+            $document.Repaginate()
+            for ($s = 1; $s -lt $document.Sections.Count; $s++) { $sectionEnds += [int]$document.Sections.Item($s).Range.End - 1 }
+            foreach ($shape in $document.Shapes) { $floatingAnchors += [int]$shape.Anchor.Start }
             $items = New-Object Collections.Generic.List[object]
             $characters = 0
             $paragraphCount = [int]$document.Paragraphs.Count
@@ -55,8 +70,23 @@ try {
                 if ($characters + $info.text.Length -gt 60000) { break }
                 $items.Add($info); $characters += $info.text.Length
             }
-            Save-WordResult @{ paragraphs=$items.ToArray(); paragraphCount=$paragraphCount; truncated=($items.Count -lt $paragraphCount); tables=[int]$document.Tables.Count; pictures=[int]$document.InlineShapes.Count }
+            $tocs = @()
+            foreach ($toc in $document.TablesOfContents) {
+                $entries = @($items.ToArray() | Where-Object { $_.end -gt $toc.Range.Start -and $_.start -lt $toc.Range.End })
+                if ($entries.Count) { $tocs += @{start=[int]$toc.Range.Start;end=[int]$toc.Range.End;first=$entries[0].index;last=$entries[-1].index} }
+            }
+            $standardCover = $null
+            if ($document.Bookmarks.Exists('SpecFlowStandardCover')) { $standardCover = @{start=0;end=[int]$document.Sections.Item(1).Range.End} }
+            Save-WordResult @{ paragraphs=$items.ToArray(); nativeTocs=$tocs; standardCover=$standardCover; paragraphCount=$paragraphCount; truncated=($items.Count -lt $paragraphCount); tables=[int]$document.Tables.Count; pictures=([int]$document.InlineShapes.Count + [int]$document.Shapes.Count) }
         } elseif ($request.action -eq 'format') {
+            # Mark the immutable upload before SaveAs or tracked edits shift it.
+            Mark-LayoutRange $request.frontMatter.cover 'SfOldCover'
+            Mark-LayoutRange $request.frontMatter.toc 'SfOldToc'
+            if ($request.frontMatter.bodyFirst) {
+                $body = $document.Paragraphs.Item([int]$request.frontMatter.bodyFirst).Range.Duplicate
+                $body.Collapse(1)
+                $null = $document.Bookmarks.Add('SfBodyStart', $body)
+            }
             # Save and reopen a macro-free intermediate before loading ONLY the bundled formatter.
             $macroFreePath = Join-Path $request.workDirectory 'working.docx'
             Emit-WordEvent @{type='progress';message='Saving the macro-free working copy'}
@@ -94,9 +124,26 @@ try {
             $document.Activate()
             Emit-WordEvent @{type='progress';message='Running the bundled V35.1 VBA formatter'}
             $report = [string]$word.Run('SpecFlowFormatter.SpecFlow_Run', [ref][string]$request.progressPath)
+            Emit-WordEvent @{type='progress';message='Standardizing cover, updateable contents and image cells'}
+            $layoutModule = $components.Add(1)
+            $layoutModule.Name = 'SpecFlowLayout'
+            $layoutModule.CodeModule.AddFromString([IO.File]::ReadAllText([string]$request.layoutModulePath, [Text.Encoding]::ASCII))
+            foreach ($key in @('mode','preset','project','title','company','author','reviewer','approver','date','number')) {
+                $value = [string]$request.layout.cover.$key
+                if (-not $value) { $value = ' ' }
+                $null = $document.Variables.Add('SfCover_' + $key, $value)
+            }
+            $null = $document.Variables.Add('SfTocMode', [string]$request.layout.toc.mode)
+            $null = $document.Variables.Add('SfTocLevels', [string]$request.layout.toc.levels)
+            $null = $document.Variables.Add('SfImageCells', [string][bool]$request.layout.imageCells)
+            $null = $document.Variables.Add('SfLayoutProgress', [string]$request.progressPath)
+            $document.Activate()
+            $layoutReport = [string]$word.Run('SpecFlowLayout.SpecFlow_Layout')
+            if ($layoutReport.StartsWith('ERROR|')) { throw ('Standard cover / contents / images failed: ' + $layoutReport) }
+            Emit-WordEvent @{type='progress';message='Saving the standardized cover, contents and image cells'}
             $outputPath = [string]$request.outputPath
             $document.SaveAs2([ref][string]$outputPath, [ref][int]$docxFormat) # Deliver a macro-free DOCX, never the working DOCM.
-            Save-WordResult @{ outputPath=$request.outputPath; report=$report; paragraphs=[int]$document.Paragraphs.Count; tables=[int]$document.Tables.Count; revisions=[int]$document.Revisions.Count; macroFree=$true }
+            Save-WordResult @{ outputPath=$request.outputPath; report=$report; layoutReport=$layoutReport; paragraphs=[int]$document.Paragraphs.Count; tables=[int]$document.Tables.Count; pictures=[int]$document.InlineShapes.Count; tocCount=[int]$document.TablesOfContents.Count; revisions=[int]$document.Revisions.Count; macroFree=$true }
         } else { throw 'Unsupported Word worker action' }
     }
 } catch {

@@ -26,6 +26,7 @@
     if (/VBA_ACCESS|VBA.*访问|VBProject|VBComponents/i.test(text)) return '打开右上角「使用说明」中的 VBA 环境说明。确认 Word 的「信任对 VBA 工程对象模型的访问」后，重新检测再重试。';
     if (/protected|protection|password|受保护|密码/i.test(text)) return '请在 Word 中打开独立副本，解除保护或密码并保存，再选择该副本。';
     if (/revision|修订/i.test(text)) return '请先在 Word 的独立副本中审核已有修订，再重新上传。不要覆盖原件。';
+    if (/目录范围|封面|Front matter|WORD_TOC/i.test(text)) return '取消当前任务后返回准备，选择保留原封面 / 原目录再处理。识别范围不明确时不会自动删除正文。';
     if (/LLM|模型|401|403|429|API|fetch|连接|timeout|超时/i.test(text)) return '检查主程序模型与 API 设置。只需要排版时，可返回准备并改选「只统一格式」，不调用模型。';
     if (/Word.*(未安装|无法启动)|COM|RPC|class not registered/i.test(text)) return '先手动启动 Microsoft Word，完成首次启动，关闭 Word 的提示或对话框，再重新检测。';
     return '原件仍保持不变。检查 Word 是否有未关闭的提示；返回准备后重试。若仍失败，请保留上面的错误信息。';
@@ -37,7 +38,19 @@
       'Saving the macro-free working copy': '正在创建不含输入宏的工作副本…',
       'Created the macro-free working copy': '工作副本已创建…',
       'Loading the trusted VBA module': '正在载入随附 VBA 排版规则…',
-      'Running the bundled V35.1 VBA formatter': '正在运行 V35.1 全文排版规则…'
+      'Running the bundled V35.1 VBA formatter': '正在运行 V35.1 全文排版规则…',
+      'Standardizing cover, updateable contents and image cells': '正在处理封面、目录与图片单元格…',
+      'Rebuilding the updateable Word table of contents': '正在重建可更新目录…',
+      'Inserting the standard engineering cover': '正在插入标准工程封面…',
+      'Writing standard cover metadata': '正在填写封面信息…',
+      'Separating cover and body headers': '正在分离封面与正文页眉…',
+      'Preserving existing section headers and footers': '正在保留原有分节页眉与页脚…',
+      'Applying standard cover typography': '正在设置封面版式…',
+      'Standard cover complete': '标准封面已完成…',
+      'Building the native linked TOC field': '正在生成可更新、可跳转的 Word 目录域…',
+      'Checking body picture anchors': '正在检查正文图片的锚点…',
+      'Placing images in single-spaced table cells': '正在将图片放入单倍行距单元格…',
+      'Saving the standardized cover, contents and image cells': '正在保存标准化副本…'
     };
     return map[message] || (/^[\x00-\x7f]+$/.test(String(message || '')) ? '正在执行排版步骤：' + message : message);
   }

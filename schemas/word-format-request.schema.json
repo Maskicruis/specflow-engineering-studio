@@ -8,7 +8,31 @@
     "mode": { "enum": ["vba", "vba-llm"], "default": "vba" },
     "confirmVba": { "const": true },
     "confirmLlm": { "type": "boolean", "description": "Required true for vba-llm; authorizes sending extracted text to the configured model" },
-    "instructions": { "type": "string", "maxLength": 4000 }
+    "instructions": { "type": "string", "maxLength": 4000 },
+    "layout": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "cover": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "mode": { "enum": ["keep", "standard"], "default": "keep" },
+            "preset": { "enum": ["engineering", "report"], "default": "engineering" },
+            "project": { "type": "string", "maxLength": 100 },
+            "title": { "type": "string", "maxLength": 100 },
+            "company": { "type": "string", "maxLength": 80 },
+            "author": { "type": "string", "maxLength": 80 },
+            "reviewer": { "type": "string", "maxLength": 80 },
+            "approver": { "type": "string", "maxLength": 80 },
+            "date": { "type": "string", "maxLength": 80 },
+            "number": { "type": "string", "maxLength": 80 }
+          },
+          "allOf": [{ "if": { "properties": { "mode": { "const": "standard" } }, "required": ["mode"] }, "then": { "required": ["title"], "properties": { "title": { "minLength": 1 } } } }]
+        },
+        "toc": { "type": "object", "additionalProperties": false, "properties": { "mode": { "enum": ["keep", "rebuild"] }, "levels": { "type": "integer", "minimum": 1, "maximum": 4, "default": 3 } } },
+        "imageCells": { "type": "boolean", "default": true }
+      },
+      "description": "Cover / TOC replacement pauses at awaiting-review and requires confirmLayout=true on apply. Native updateable TOC is created by trusted VBA but final DOCX contains no macros."
+    }
   },
   "allOf": [{ "if": { "properties": { "mode": { "const": "vba-llm" } }, "required": ["mode"] }, "then": { "required": ["confirmLlm"], "properties": { "confirmLlm": { "const": true } } } }],
   "additionalProperties": false

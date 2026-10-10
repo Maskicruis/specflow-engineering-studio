@@ -301,7 +301,7 @@ function createMainWindow(url) {
             await new Promise(resolve => setTimeout(resolve, 260));
           }
           if (captureChat && captureChat.question) {
-            await mainWindow.webContents.executeJavaScript(`(()=>{const p=${JSON.stringify(captureChat)};showPage('assistant');appendUserTurn(p.question);const turn=appendAssistantTurn();const empty=document.getElementById('assistantEmpty');if(empty)empty.style.display='none';turn.note.textContent=p.label||'资料库增强回答';turn.answer.innerHTML=answerHtml(p.answer||'',p.citations||[]);turn.cites.innerHTML=(p.citations||[]).map(citationCard).join('');document.getElementById('qState').textContent=(p.label||'资料库增强回答')+' · 引用 '+(p.citations||[]).length+' 条'})()`);
+            await mainWindow.webContents.executeJavaScript(`(()=>{const p=${JSON.stringify(captureChat)};showPage('assistant');appendUserTurn(p.question);const turn=appendAssistantTurn();const empty=document.getElementById('assistantEmpty');if(empty)empty.style.display='none';turn.note.textContent=p.label||'资料库增强回答';SpecFlowChatView.update(turn,p.answer||'',p.citations||[],answerHtml,citationCard);SpecFlowChatView.setState(turn,'complete');document.getElementById('qState').textContent=(p.label||'资料库增强回答')+' · 引用 '+(p.citations||[]).length+' 条'})()`);
             await new Promise(resolve => setTimeout(resolve, 300));
           }
           if (captureCitation && captureCitation.docId) {

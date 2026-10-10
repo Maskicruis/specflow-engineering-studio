@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-111%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-119%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -27,6 +27,7 @@
 - **独立模型运行**：无需打开 Harness。直接配置任意 OpenAI 兼容的 DeepSeek、Ollama、vLLM 或其他模型，即可使用智能问答、仅资料库和通用对话。
 - **截图与图片问答**：在输入框按 `Ctrl+V` 粘贴截图，或拖入 / 点击“＋”添加图片；支持缩略图、移除、原图预览、多图发送及最近对话追问。含图片的 DeepSeek 官方请求自动使用图像模型，也可在设置中指定其他兼容模型；智能问答先从图片提取主题，再按选定分组检索规范。
 - **完整工程助手**：像通用大模型客户端一样连续对话；可选“智能问答”“仅资料库”“通用对话”，资料不足时不再让整套系统失去通用问答能力。
+- **轻量对话界面**：无边框回复正文、柔和用户气泡，支持标题、列表、引用块、表格和代码块；行内引文及文后链接保留，原文片段默认折叠。新增回复入场、等待圆点与生成状态动画，支持复制回复和代码；向上阅读时暂停自动跟随，可一键回到最新，动画尊重系统减少动态效果设置。
 - **Codex 式对话工作区**：左侧顶部可直接新建独立对话，最近记录使用单行、全高列表；点击即可恢复完整多轮内容、引用和检索范围，也可继续追问。
 - **文档数据库**：集中管理 PDF、解析队列、状态、页数、图片和内容规模；通过明确的应用内对话框新建、重命名和删除文件分组，并支持逐文档归组。
 - **分组问答**：问答范围可选择全部文档、指定分组、未分组或单个文档；空分组不会意外回退到全库检索。
@@ -128,4 +129,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [Word 标准化](docs/WORD_FORMAT_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.11.0 更新说明](docs/RELEASE_NOTES_0.11.0_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [Word 标准化](docs/WORD_FORMAT_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.11.1 更新说明](docs/RELEASE_NOTES_0.11.1_CN.md)

@@ -1,6 +1,22 @@
 /* Loaded after feature styles so every visible surface resolves through the shared theme tokens. */
 .title-balance.ok { color: var(--renewable); }
 .title-balance.warn { color: var(--amber); }
+.title-tool, .window-button { flex-shrink: 0; white-space: nowrap; }
+.title-tool svg { flex-shrink: 0; }
+#modelTitleLabel { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1180px) {
+  .desktop-titlebar { grid-template-columns: minmax(210px, 1fr) auto auto; gap: 12px; }
+  .desktop-titlebar .title-brand { min-width: 0; }
+  .desktop-titlebar .title-copy small { display: none; }
+  .desktop-titlebar .title-copy strong { white-space: nowrap; }
+  .desktop-runtime { max-width: 145px; overflow: hidden; white-space: nowrap; }
+  .title-tool { padding: 0 8px; }
+  #modelTitleLabel { max-width: 105px; }
+}
+@media (max-width: 1100px) {
+  .desktop-runtime { max-width: 125px; font-size: 9px; }
+  .title-tool:not(.title-balance) > span { display: none; }
+}
 .engineering-body, .tools-body { padding: 24px 28px 52px; }
 .studio-card, .tool-card, .metric-card, .spec-monitor-item { box-shadow: 0 8px 24px color-mix(in srgb, var(--overlay) 12%, transparent); }
 .studio-card-head h3, .tool-copy strong { font-size: 13px; }

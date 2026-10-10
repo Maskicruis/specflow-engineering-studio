@@ -44,6 +44,7 @@ test('正文中的片段编号变成与文后来源相同的可点击引用', ()
   const end = ui.indexOf('function citationCard', start);
   assert.ok(start >= 0 && end > start, '找到 answerHtml');
   const sandbox = {
+    SpecFlowChatView: require('../ui-modules/chat-view'),
     esc: value => String(value || ''),
     citationLink: citation => '<a data-act="cite" data-doc="' + citation.docId + '">[' + citation.n + ']</a>',
     citationSourceLink: () => '<a class="answer-source-link"></a>'

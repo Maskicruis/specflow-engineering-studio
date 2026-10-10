@@ -209,7 +209,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       }
       if (pathname.startsWith('/app/')) {
         const filename = path.basename(pathname);
-        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'chat-images.js', 'chat-images.css', 'stream-client.js', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
+        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'chat-images.js', 'chat-images.css', 'chat-view.js', 'chat-view.css', 'stream-client.js', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
       if (pathname.startsWith('/tool-assets/')) {

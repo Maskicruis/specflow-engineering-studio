@@ -66,7 +66,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 /* Slightly larger optical sizes and system text rendering improve legibility on high-DPI displays. */
 .btn,input,select,textarea{font-size:12px}.btn{min-height:32px}.muted,.field-help,.studio-state,.studio-field label,.tool-copy p,.tool-meta,.tool-section-head p,.tool-section-head>span,.monitor-meta,.monitor-item-url,.app-dialog-help{font-size:11px}.nav-item span,.recent-title,.group-item .group-name{font-size:12px}.assistant-empty p{font-size:12px}.assistant-footer .composer textarea{min-height:58px;font-size:14px}.assistant-footer .qa-status,.chat-mode-note{font-size:11px}.engine-badge,.nav-key,.sidebar-new-chat kbd{font-size:10px}.library-table th{font-size:11px}.library-table{font-size:12px}
 ::-webkit-scrollbar{width:11px;height:11px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{border:3px solid transparent;border-radius:999px;background:color-mix(in srgb,var(--text-3) 45%,transparent);background-clip:padding-box}::-webkit-scrollbar-thumb:hover{background:color-mix(in srgb,var(--text-3) 68%,transparent);background-clip:padding-box}
-</style><link rel="stylesheet" href="/app/workspace.css"><link rel="stylesheet" href="/app/brand-theme.css"><link rel="stylesheet" href="/app/chat-images.css"></head><body>
+</style><link rel="stylesheet" href="/app/workspace.css"><link rel="stylesheet" href="/app/brand-theme.css"><link rel="stylesheet" href="/app/chat-images.css"><link rel="stylesheet" href="/app/chat-view.css"></head><body>
 <div class="desktop-titlebar" aria-label="应用标题栏">
   <div class="title-brand"><div class="brand-mark" aria-hidden="true"><img src="/brand/specflow-mark.svg" alt=""></div><div class="title-copy"><strong>SpecFlow Engineering Studio</strong><small>Rail · New Energy</small></div></div>
   <div class="desktop-runtime"><span class="pulse"></span><span id="desktopRuntime">正在启动本地服务…</span></div>
@@ -116,7 +116,7 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
           <div id="assistantEmpty" class="assistant-empty"><div class="assistant-symbol"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 14 9l5.5 2-5.5 2-2 5.5-2-5.5-5.5-2L10 9l2-5.5Z" stroke-width="1.5" stroke-linejoin="round"/></svg></div><h1>开始查证工程文档</h1><p>提出规范条文、设计参数或技术要求问题。回答会保留页码和坐标，可直接回到 PDF 原文核查。</p></div>
           <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
         </div></div>
-        <div class="assistant-footer"><div id="chatComposer" class="composer">
+        <div class="assistant-footer"><button id="chatJumpLatest" class="chat-jump-latest" type="button" data-act="latestAnswer" hidden aria-label="滚动到最新回复">↓ 回到最新</button><div id="chatComposer" class="composer">
           <div id="chatAttachments" class="chat-attachments" hidden aria-label="待发送的图片附件"></div><div id="chatAttachmentState" class="chat-attachment-state" aria-live="polite"></div>
           <textarea id="q" rows="2" aria-label="向知识库提问，可粘贴图片" placeholder="输入问题，或粘贴 / 拖入图片…"></textarea>
           <input id="chatImagePicker" type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple hidden>
@@ -216,8 +216,9 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 <div id="chatImageViewer" class="chat-image-viewer" hidden><button class="chat-image-backdrop" data-close-chat-image aria-label="关闭图片预览" tabindex="-1"></button><section class="chat-image-dialog" role="dialog" aria-modal="true" aria-labelledby="chatImageTitle"><header class="chat-image-head"><strong id="chatImageTitle">图片预览</strong><button id="closeChatImage" class="btn" data-close-chat-image>关闭预览</button></header><div class="chat-image-content"><img id="chatImageFull" alt="图片预览"></div></section></div>
 <script src="/app/chat-images.js"></script>
 <script src="/app/stream-client.js"></script>
+<script src="/app/chat-view.js"></script>
 <script>
-var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], QA_BUSY=false, QA_CONTROLLER=null, SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
+var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], QA_BUSY=false, QA_CONTROLLER=null, CHAT_FOLLOW=true, CHAT_SCROLL_PENDING=false, CHAT_LAST_SCROLL_TOP=0, SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
 try{ document.documentElement.setAttribute('data-theme',localStorage.getItem('kb-theme')||'dark'); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 function api(p,o){ return fetch('/api/'+p,o).then(async function(r){ var body=await r.json().catch(function(){return {};}); if(!r.ok) throw new Error((body.error&&body.error.message)||body.msg||r.status); return body; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -499,11 +500,8 @@ function citationSourceLink(c){
   return '<a href="'+attr(href)+'" class="answer-source-link" title="点击跳转并高亮 PDF 原文"'+citationAttrs(c)+'><span>'+esc(label)+'</span><b>打开原文 ↗</b></a>';
 }
 function answerHtml(text,citations){
-  var list=Array.isArray(citations)?citations:[], byNumber={}; list.forEach(function(c){byNumber[String(c.n)]=c;});
-  var html=esc(text||'');
-  html=html.replace(/`([^`\n]+)`/g,'<code>$1</code>').replace(/\*\*([^*\n]+)\*\*/g,'<strong>$1</strong>');
-  html=html.replace(/(?:\[|【|［)\s*(?:(?:片段|segment)\s*)?(\d{1,3})\s*(?:\]|】|］)/gi,function(all,n){var key=String(Number(n));return byNumber[key]?citationLink(byNumber[key]):all;});
-  html=html.split(/\n{2,}/).map(function(block){return '<p>'+block.replace(/\n/g,'<br>')+'</p>';}).join('');
+  var list=Array.isArray(citations)?citations:[];
+  var html=SpecFlowChatView.render(text,list,citationLink);
   if(list.length) html+='<div class="answer-sources"><div class="answer-sources-title">参考来源 · 点击可跳转并高亮 PDF 原文</div><div class="answer-source-list">'+list.map(citationSourceLink).join('')+'</div></div>';
   return html;
 }
@@ -513,19 +511,34 @@ function citationCard(c){
     +'<div class="h">['+Number(c.n)+'] '+esc(c.title)+' · 第 '+Number(c.page||1)+' 页'+(c.ref?' · 条文 '+esc(c.ref):'')+(c.type==='table'?' · 表格':'')+'</div>'
     +'<div class="s">'+esc(String(c.snippet||'').slice(0,240))+'</div></a>';
 }
-function scrollConversation(){ var stream=document.querySelector('.assistant-stream'); if(stream) requestAnimationFrame(function(){stream.scrollTop=stream.scrollHeight;}); }
-function appendUserTurn(text,images){
+function syncChatJump(){ var button=document.getElementById('chatJumpLatest'); if(button) button.hidden=CHAT_FOLLOW; }
+function scrollConversation(force){
+  var stream=document.querySelector('.assistant-stream'); if(!stream) return;
+  if(force){CHAT_FOLLOW=true;stream.scrollTop=stream.scrollHeight;CHAT_LAST_SCROLL_TOP=stream.scrollTop;syncChatJump();return;} syncChatJump();
+  if(!CHAT_FOLLOW||CHAT_SCROLL_PENDING) return;
+  CHAT_SCROLL_PENDING=true; requestAnimationFrame(function(){ CHAT_SCROLL_PENDING=false;if(CHAT_FOLLOW){stream.scrollTop=stream.scrollHeight;CHAT_LAST_SCROLL_TOP=stream.scrollTop;syncChatJump();} });
+}
+function appendUserTurn(text,images,history){
   var box=document.getElementById('chatMessages');
-  var turn=document.createElement('div'); turn.className='chat-turn user'; turn.innerHTML='<div class="chat-user-bubble">'+(window.SpecFlowChatImages?SpecFlowChatImages.turnHtml(images):'')+esc(text)+'</div>';
-  box.appendChild(turn); scrollConversation();
+  var turn=document.createElement('div'); turn.className='chat-turn user'+(history?' history':''); turn.innerHTML='<div class="chat-user-bubble">'+(window.SpecFlowChatImages?SpecFlowChatImages.turnHtml(images):'')+esc(text)+'</div>';
+  box.appendChild(turn); scrollConversation(true);
   return turn;
 }
-function appendAssistantTurn(){
+function appendAssistantTurn(history){
   var box=document.getElementById('chatMessages');
-  var turn=document.createElement('div'); turn.className='chat-turn assistant';
-  turn.innerHTML='<div class="chat-avatar">✦</div><div class="chat-assistant-body"><div class="chat-mode-note">正在思考…</div><details class="chat-reasoning" hidden><summary>模型思考过程</summary><pre></pre></details><div class="qa-answer">正在生成回答…</div><div class="qa-cites"></div></div>';
+  var turn=document.createElement('div'); turn.className='chat-turn assistant'+(history?' history':''); turn.setAttribute('data-state',history?'complete':'pending');turn.setAttribute('aria-busy',history?'false':'true');
+  turn.innerHTML='<div class="chat-avatar" aria-hidden="true"><img src="/brand/specflow-mark.svg" alt=""></div><div class="chat-assistant-body"><div class="chat-message-head"><i class="chat-state-dot" aria-hidden="true"></i><div class="chat-mode-note">正在思考…</div></div><details class="chat-reasoning" hidden><summary>思考过程</summary><pre></pre></details><div class="chat-typing" aria-hidden="true"><i></i><i></i><i></i></div><div class="qa-answer"></div><details class="chat-sources" hidden><summary>查看原文片段</summary><div class="qa-cites"></div></details><div class="chat-response-actions"><button class="chat-response-action" type="button" data-act="copyAnswer" title="复制回复及参考来源" aria-label="复制回复及参考来源" disabled><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke-width="1.6"/><path d="M16 8V4H4v12h4" stroke-width="1.6" stroke-linejoin="round"/></svg><span>复制回复</span></button></div></div>';
   box.appendChild(turn); scrollConversation();
-  return { root:turn, note:turn.querySelector('.chat-mode-note'), answer:turn.querySelector('.qa-answer'), cites:turn.querySelector('.qa-cites'), reasoning:turn.querySelector('.chat-reasoning'), reasoningText:turn.querySelector('.chat-reasoning pre') };
+  return { root:turn, note:turn.querySelector('.chat-mode-note'), answer:turn.querySelector('.qa-answer'), cites:turn.querySelector('.qa-cites'), reasoning:turn.querySelector('.chat-reasoning'), reasoningText:turn.querySelector('.chat-reasoning pre'), sources:turn.querySelector('.chat-sources'), sourceSummary:turn.querySelector('.chat-sources summary'), copy:turn.querySelector('[data-act="copyAnswer"]') };
+}
+async function copyChatContent(button){
+  var code=button.getAttribute('data-act')==='copyCode'; var root=button.closest(code?'.chat-code':'.chat-turn');
+  var value=root&&(code?root.querySelector('pre code').textContent:root._copyText); if(!value) return;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText) await navigator.clipboard.writeText(value);
+    else { var field=document.createElement('textarea');field.value=value;field.style.cssText='position:fixed;left:-10000px;top:0';document.body.appendChild(field);try{field.select();if(!document.execCommand('copy'))throw new Error('复制不可用');}finally{field.remove();} }
+    var label=code?button:button.querySelector('span'),original=button._copyLabel||label.textContent;button._copyLabel=original;label.textContent='已复制';button.classList.add('copied');clearTimeout(button._copyReset);button._copyReset=setTimeout(function(){label.textContent=original;button.classList.remove('copied');},1600);
+  }catch(e){ document.getElementById('qState').textContent='无法自动复制，请选中文字复制。'; }
 }
 function conversationTime(value){
   var date=new Date(value||0); if(!Number.isFinite(date.getTime())) return '';
@@ -548,12 +561,12 @@ async function openConversation(id){
     var response=await api('v1/conversations/'+encodeURIComponent(id)); var record=response.data||response; var turns=Array.isArray(record.turns)?record.turns:[];
     CURRENT_CONVERSATION_ID=record.id; CHAT_HISTORY=[]; SpecFlowChatImages.clear(); document.getElementById('q').value=''; document.getElementById('chatMessages').innerHTML='';
     var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display=turns.length?'none':'block';
-    turns.forEach(function(item){ appendUserTurn(item.question||'',item.images||[]); CHAT_HISTORY.push({role:'user',content:item.question||'',images:item.images||[]}); var turn=appendAssistantTurn(); var text=item.answer||item.note||item.error||''; turn.note.textContent=assistantLabel(item)+(item.model?' · '+item.model:''); turn.answer.innerHTML=answerHtml(text,item.citations||[]); turn.cites.innerHTML=(item.citations||[]).map(citationCard).join(''); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); });
+    turns.forEach(function(item){ appendUserTurn(item.question||'',item.images||[],true); CHAT_HISTORY.push({role:'user',content:item.question||'',images:item.images||[]}); var turn=appendAssistantTurn(true); var text=item.answer||item.note||item.error||''; turn.note.textContent=assistantLabel(item)+(item.model?' · '+item.model:''); SpecFlowChatView.update(turn,text,item.citations||[],answerHtml,citationCard);SpecFlowChatView.setState(turn,'complete'); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); });
     if(record.retrievalMode) document.getElementById('qMode').value=record.retrievalMode;
     if(record.scenario) document.getElementById('qScenario').value=record.scenario;
     var scope=record.groupId!==undefined&&record.groupId!==null?'group:'+record.groupId:(record.docIds&&record.docIds.length===1?'doc:'+record.docIds[0]:'all');
     if(Array.from(document.getElementById('qScope').options).some(function(option){return option.value===scope;})) document.getElementById('qScope').value=scope;
-    syncQaMode(); renderRecentConversations(); showPage('assistant'); scrollConversation(); document.getElementById('q').focus();
+    syncQaMode(); renderRecentConversations(); showPage('assistant'); scrollConversation(true); document.getElementById('q').focus();
   }catch(e){ alert('打开对话失败：'+e.message); }
 }
 async function deleteConversation(id){
@@ -565,7 +578,7 @@ async function deleteConversation(id){
 function newChat(){
   if(QA_BUSY){ document.getElementById('qState').textContent='请等待当前回答完成后再新建对话。'; return; }
   SpecFlowChatImages.clear(); document.getElementById('q').value=''; document.getElementById('q').style.height='';
-  CURRENT_CONVERSATION_ID=''; CHAT_HISTORY=[]; document.getElementById('chatMessages').innerHTML=''; document.getElementById('qState').textContent=''; renderRecentConversations();
+  CURRENT_CONVERSATION_ID=''; CHAT_HISTORY=[]; CHAT_FOLLOW=true;syncChatJump();document.getElementById('chatMessages').innerHTML=''; document.getElementById('qState').textContent=''; renderRecentConversations();
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='block'; showPage('assistant'); document.getElementById('q').focus();
 }
 function syncQaMode(){ var general=document.getElementById('qMode').value==='general'; var scope=document.getElementById('qScope'); if(scope){scope.disabled=general;scope.title=general?'通用对话不检索资料库':'检索范围';} }
@@ -588,7 +601,7 @@ async function askQuestion(){
   document.getElementById('qState').textContent=images.length?(retrievalMode==='general'?'正在分析图片…':'正在识别图片、检索并生成…'):(retrievalMode==='general'?'模型生成中…':'检索并生成中…');
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='none';
   var text='',citations=[],reasoning='',result=null,saved=false,renderPending=false,streamActive=true;
-  function renderStream(){renderPending=false;turn.answer.innerHTML=answerHtml(text,citations);scrollConversation();}
+  function renderStream(){renderPending=false;SpecFlowChatView.update(turn,text,citations,answerHtml,citationCard);scrollConversation();}
   function scheduleRender(){if(!renderPending){renderPending=true;requestAnimationFrame(function(){if(streamActive)renderStream();});}}
   try{
     var payload={question:q,images:images.map(function(image){return image.id;}),scenario:scenario,retrievalMode:retrievalMode,conversationId:CURRENT_CONVERSATION_ID||undefined}; if(retrievalMode!=='general') Object.assign(payload,scopePayload(scope));
@@ -597,9 +610,9 @@ async function askQuestion(){
     await SpecFlowStream.json(r,function(event){
       if(event.type==='error') throw new Error(event.error||'模型生成失败');
       if(event.type==='phase'){turn.note.textContent=event.message||'处理中…';document.getElementById('qState').textContent=turn.note.textContent;}
-      if(event.type==='citations'){citations=event.citations||[];turn.cites.innerHTML=citations.map(citationCard).join('');scheduleRender();}
+      if(event.type==='citations'){citations=event.citations||[];scheduleRender();}
       if(event.type==='reasoning'){reasoning+=event.text||'';turn.reasoning.hidden=false;turn.reasoningText.textContent=reasoning;}
-      if(event.type==='delta'){text+=event.text||'';turn.note.textContent='正在接收回答…';scheduleRender();}
+      if(event.type==='delta'){text+=event.text||'';turn.note.textContent='正在生成回答…';SpecFlowChatView.setState(turn,'streaming');scheduleRender();}
       if(event.type==='done'){result=event;text=event.answer||event.note||text;citations=event.citations||citations;renderStream();}
       if(event.type==='saved'){CURRENT_CONVERSATION_ID=event.conversationId;saved=true;}
     });
@@ -608,10 +621,10 @@ async function askQuestion(){
     var n=(d.citations||[]).length;
     var label=d.mode==='clarification'?'需要补充信息':d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
     document.getElementById('qState').textContent=label+(n?' · 引用 '+n+' 条':'');
-    turn.note.textContent=label+(d.model?' · '+d.model:''); turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
+    turn.note.textContent=label+(d.model?' · '+d.model:''); SpecFlowChatView.update(turn,text,d.citations||[],answerHtml,citationCard);SpecFlowChatView.setState(turn,'complete');
     if(d.warning){turn.note.textContent+=' · '+d.warning;document.getElementById('qState').textContent=d.warning;}
     CHAT_HISTORY.push({role:'user',content:q,images:images}); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
-  }catch(e){ var stopped=QA_CONTROLLER&&QA_CONTROLLER.signal.aborted;turn.note.textContent=(stopped?'已停止生成':'接收失败')+' · 未保存本轮记录';if(text){renderStream();}else{userTurn.remove();turn.answer.textContent=stopped?'已停止。问题和图片已恢复，可重新发送。':'失败：'+e.message+'。问题和图片已恢复，可重试。';}document.getElementById('qState').textContent=stopped?'已停止生成':'失败：'+e.message;document.getElementById('q').value=originalQuestion;SpecFlowChatImages.restore(images); }
+  }catch(e){ var stopped=QA_CONTROLLER&&QA_CONTROLLER.signal.aborted;turn.note.textContent=(stopped?'已停止生成':'接收失败')+' · 未保存本轮记录';if(text){renderStream();}else{userTurn.remove();turn.answer.textContent=stopped?'已停止。问题和图片已恢复，可重新发送。':'失败：'+e.message+'。问题和图片已恢复，可重试。';}SpecFlowChatView.setState(turn,stopped?'stopped':'error');document.getElementById('qState').textContent=stopped?'已停止生成':'失败：'+e.message;document.getElementById('q').value=originalQuestion;SpecFlowChatImages.restore(images); }
   finally{ streamActive=false;QA_BUSY=false;QA_CONTROLLER=null;SpecFlowChatImages.setBusy(false);sendButton.setAttribute('data-act','ask');sendButton.setAttribute('aria-label','发送问题');sendButton.title='Enter 发送 · Shift + Enter 换行';sendButton.innerHTML=sendIcon;document.getElementById('q').readOnly=false;document.getElementById('q').focus(); }
 }
 function toggleTheme(){
@@ -754,6 +767,8 @@ document.addEventListener('click',function(e){
   else if(act==='read'){ readDoc(t.getAttribute('data-id')); }
   else if(act==='ask'){ askQuestion(); }
   else if(act==='stopAnswer'){ if(QA_CONTROLLER) QA_CONTROLLER.abort(); }
+  else if(act==='copyAnswer'||act==='copyCode'){ copyChatContent(t); }
+  else if(act==='latestAnswer'){ scrollConversation(true); }
   else if(act==='theme'){ toggleTheme(); }
   else if(act==='saveLlm'){ saveLlm(); }
   else if(act==='clearLlmKey'){ clearLlmKey(); }
@@ -798,6 +813,15 @@ document.getElementById('file').addEventListener('change',updateFileMeta);
 document.getElementById('dbSearch').addEventListener('input',render);
 document.addEventListener('change',function(e){ var select=e.target&&e.target.closest?e.target.closest('[data-doc-group]'):null; if(select) assignDocumentGroup(select.getAttribute('data-doc-group'),select.value); });
 document.getElementById('qMode').addEventListener('change',syncQaMode);
+function onChatScroll(){
+  if(SpecFlowChatView.nearBottom(this)) CHAT_FOLLOW=true;
+  else if(this.scrollTop<CHAT_LAST_SCROLL_TOP-2) CHAT_FOLLOW=false;
+  CHAT_LAST_SCROLL_TOP=this.scrollTop;syncChatJump();
+}
+var chatScroll=document.querySelector('.assistant-stream');
+chatScroll.addEventListener('scroll',onChatScroll,{passive:true});
+['wheel','touchmove','pointerdown'].forEach(function(name){chatScroll.addEventListener(name,function(event){if((name!=='wheel'||event.deltaY<0)&&this.scrollHeight>this.clientHeight+80){CHAT_FOLLOW=false;syncChatJump();}},{passive:true});});
+chatScroll.addEventListener('keydown',function(event){if(['ArrowUp','PageUp','Home'].indexOf(event.key)>=0){CHAT_FOLLOW=false;syncChatJump();}});
 document.getElementById('autoCheckUpdates').addEventListener('change',function(){ if(DESKTOP&&DESKTOP.updates) DESKTOP.updates.setAutoCheck(this.checked); });
 var drop=document.getElementById('importSection');
 ['dragenter','dragover'].forEach(function(name){drop.addEventListener(name,function(e){e.preventDefault();drop.classList.add('dragging');});});

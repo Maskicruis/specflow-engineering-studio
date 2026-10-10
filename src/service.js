@@ -20,6 +20,7 @@ const { ProjectWorkspace } = require('./project-workspace');
 const { SpecificationMonitor } = require('./spec-monitor');
 const { decorateCitation } = require('./citation-links');
 const { planQuery } = require('./query-planner');
+const { WordFormatService } = require('./word-format');
 
 const DOCUMENTS_FILE = path.join(DATA, 'documents.json');
 const GROUPS_FILE = path.join(DATA, 'document-groups.json');
@@ -55,6 +56,7 @@ class KnowledgeBaseService {
     this.conversations = readJson(this.conversationsFile, []);
     if (!Array.isArray(this.conversations)) this.conversations = [];
     this.chatImages = new ChatImages(DATA);
+    this.wordFormat = new WordFormatService({ dataDir: DATA, root: ROOT, getLlm: () => this.settings.llm });
     this.queue = new JobQueue({ concurrency: 1 });
     this.projectWorkspace = new ProjectWorkspace({ dataDir: DATA });
     this.specificationMonitor = new SpecificationMonitor({ dataDir: DATA });
@@ -429,7 +431,7 @@ class KnowledgeBaseService {
     return { items };
   }
 
-  shutdown() { this.specificationMonitor.stop(); }
+  shutdown() { this.specificationMonitor.stop(); this.wordFormat.shutdown(); }
 
   resolveDocumentIds(payload = {}) {
     if (Array.isArray(payload.docIds)) return payload.docIds.map(String);
@@ -596,6 +598,7 @@ class KnowledgeBaseService {
         'local-search(bm25)', 'hybrid-search(bm25+embedding, optional)', 'llm-qa', 'llm-stream',
         'citation-jump-highlight', 'inline-citation-links', 'desktop-citation-handoff', 'conversation-history', 'multi-turn-chat',
         'image-paste', 'multimodal-chat', 'image-aware-retrieval',
+        'stream-forwarding', 'stream-cancellation', 'word-vba-standardization', 'word-llm-review',
         'document-groups', 'group-scoped-retrieval', 'general-llm-fallback', 'item-export',
         'semantic-query-expansion', 'ambiguity-clarification',
         'engineering-project-workspace', 'project-folder-templates', 'design-completeness-checklist',
@@ -607,6 +610,7 @@ class KnowledgeBaseService {
         ask: 'schemas/ask-response.schema.json',
         askRequest: 'schemas/ask-request.schema.json',
         chatImage: 'schemas/chat-image.schema.json',
+        wordFormatRequest: 'schemas/word-format-request.schema.json',
         citation: 'schemas/citation.schema.json',
         search: 'schemas/search-response.schema.json',
         itemExport: 'schemas/item-export.schema.json'
@@ -616,6 +620,15 @@ class KnowledgeBaseService {
         { method: 'GET', path: '/api/v1/search?q=&topK=&doc=&group=', desc: '语义查询规划 + 本地检索（可按文档或分组限定）' },
         { method: 'POST', path: '/api/v1/ask', desc: '问答（结构化引用）' },
         { method: 'POST', path: '/api/v1/ask/stream', desc: '问答（SSE 流式）' },
+        { method: 'GET', path: '/api/v1/word-format/status', desc: 'Microsoft Word / VBA 访问 / 模型配置检测' },
+        { method: 'POST', path: '/api/v1/word-format/files', desc: '接收 Word 文档副本（原始二进制，X-File-Name）' },
+        { method: 'GET/POST', path: '/api/v1/word-format/jobs', desc: 'Word 格式任务列表 / 创建任务' },
+        { method: 'GET', path: '/api/v1/word-format/jobs/:id', desc: 'Word 任务状态与待审核计划' },
+        { method: 'POST', path: '/api/v1/word-format/jobs/:id/apply', desc: '确认结构 / 文字建议并运行 VBA' },
+        { method: 'POST', path: '/api/v1/word-format/jobs/:id/cancel', desc: '取消 Word 任务' },
+        { method: 'GET', path: '/api/v1/word-format/jobs/:id/events', desc: 'Word 任务进度与模型审查 SSE' },
+        { method: 'GET', path: '/api/v1/word-format/jobs/:id/output', desc: '下载无宏标准化 DOCX' },
+        { method: 'GET', path: '/api/v1/word-format/jobs/:id/report', desc: '下载结构化处理报告' },
         { method: 'POST', path: '/api/v1/chat/images', desc: '上传聊天图片（原始二进制，X-File-Name）' },
         { method: 'GET/DELETE', path: '/api/v1/chat/images/:id', desc: '查看图片或删除尚未使用的附件' },
         { method: 'GET', path: '/api/v1/conversations', desc: '会话历史' },
@@ -671,7 +684,7 @@ class KnowledgeBaseService {
   }
 
   /** 流式问答（SSE）：emit 事件；结束时写入会话历史 */
-  async askStream(payload = {}, emit = () => {}) {
+  async askStream(payload = {}, emit = () => {}, options = {}) {
     let prepared;
     try { prepared = this.prepareChat(payload); } catch (error) { emit({ type: 'error', error: error.message, code: error.code || 'BAD_REQUEST' }); return; }
     const { question, images, modelImages, history } = prepared;
@@ -684,14 +697,15 @@ class KnowledgeBaseService {
       docIds: this.resolveDocumentIds(payload),
       retrievalMode: payload.retrievalMode,
       images: modelImages,
+      signal: options.signal,
       history
     }, this.deps(), event => {
       if (event.type === 'citations') { citations = event.citations || []; retrieval = event.retrieval || null; queryPlan = event.queryPlan || null; retrievalMode = event.retrievalMode || retrievalMode; grounding = event.grounding || grounding; imageContext = event.imageContext || null; }
       if (event.type === 'delta') answer += event.text || '';
-      if (event.type === 'done') { mode = event.mode || 'llm'; model = event.model || ''; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer) answer = event.answer; if (event.citations) citations = event.citations; }
+      if (event.type === 'done') { mode = event.mode || 'llm'; model = event.model || ''; grounding = event.grounding || grounding; retrievalMode = event.retrievalMode || retrievalMode; if (event.answer || event.note) answer = event.answer || event.note; if (event.citations) citations = event.citations; }
       emit(event);
     });
-    if (mode) {
+    if (mode && !options.signal?.aborted) {
       const conversationId = this.recordConversation({ question, images, imageContext, model, scenario: payload.scenario || 'design', mode, answer, citations, retrieval, queryPlan, retrievalMode, grounding, durationMs: Date.now() - started, groupId: Object.prototype.hasOwnProperty.call(payload, 'groupId') ? String(payload.groupId || '') : null, docIds: Array.isArray(payload.docIds) ? payload.docIds.map(String) : [] }, payload.conversationId);
       emit({ type: 'saved', conversationId });
     }

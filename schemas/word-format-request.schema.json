@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Word formatting task request",
+  "type": "object",
+  "required": ["fileId", "confirmVba"],
+  "properties": {
+    "fileId": { "type": "string", "pattern": "^wf_[0-9a-f-]{36}$" },
+    "mode": { "enum": ["vba", "vba-llm"], "default": "vba" },
+    "confirmVba": { "const": true },
+    "confirmLlm": { "type": "boolean", "description": "Required true for vba-llm; authorizes sending extracted text to the configured model" },
+    "instructions": { "type": "string", "maxLength": 4000 }
+  },
+  "allOf": [{ "if": { "properties": { "mode": { "const": "vba-llm" } }, "required": ["mode"] }, "then": { "required": ["confirmLlm"], "properties": { "confirmLlm": { "const": true } } } }],
+  "additionalProperties": false
+}

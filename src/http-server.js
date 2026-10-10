@@ -7,6 +7,7 @@ const { DATA, ROOT } = require('./config');
 const { KnowledgeBaseService } = require('./service');
 const { toLegacyItems } = require('./transform');
 const { IMAGE_LIMITS } = require('./chat-images');
+const { MAX_WORD_BYTES } = require('./word-format');
 
 let sea = null;
 let runningAsSea = false;
@@ -195,6 +196,7 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
     try {
       if (pathname === '/') return sendStaticAsset(request, response, 'ui.html', uiFile, 'text/html; charset=utf-8');
       if (pathname === '/tools/road-slope') return sendStaticAsset(request, response, 'ui-tools/road-slope.html', roadSlopeToolFile, 'text/html; charset=utf-8');
+      if (pathname === '/tools/word-format') return sendStaticAsset(request, response, 'ui-tools/word-format.html', path.join(ROOT, 'ui-tools', 'word-format.html'), 'text/html; charset=utf-8');
       if (pathname === '/brand/specflow-mark.svg') {
         return sendStaticAsset(request, response, 'build/specflow-mark.svg', path.join(ROOT, 'build', 'specflow-mark.svg'), 'image/svg+xml');
       }
@@ -207,12 +209,12 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       }
       if (pathname.startsWith('/app/')) {
         const filename = path.basename(pathname);
-        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'chat-images.js', 'chat-images.css', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
+        if (!['workspace.js', 'workspace.css', 'brand-theme.css', 'chat-images.js', 'chat-images.css', 'stream-client.js', 'road-slope-core.js'].includes(filename)) throw new HttpError(404, '界面模块不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-modules/' + filename, path.join(ROOT, 'ui-modules', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
       if (pathname.startsWith('/tool-assets/')) {
         const filename = path.basename(pathname);
-        if (!['road-slope-window.js', 'road-slope-window.css'].includes(filename)) throw new HttpError(404, '工具界面资源不存在', 'NOT_FOUND');
+        if (!['road-slope-window.js', 'road-slope-window.css', 'word-format-window.js', 'word-format-window.css', 'word-format-guide.js'].includes(filename)) throw new HttpError(404, '工具界面资源不存在', 'NOT_FOUND');
         return sendStaticAsset(request, response, 'ui-tools/' + filename, path.join(ROOT, 'ui-tools', filename), MIMES[path.extname(filename).toLowerCase()] || 'application/octet-stream');
       }
 
@@ -255,6 +257,34 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
       // 能力与接口清单（联动/发现预留）
       if (pathname === '/api/v1/capabilities' && request.method === 'GET') return success(response, service.capabilities());
 
+      if (pathname === '/api/v1/word-format/status' && request.method === 'GET') return success(response, await service.wordFormat.status());
+      if (pathname === '/api/v1/word-format/files' && request.method === 'POST') return success(response, service.wordFormat.upload(decodeFileName(request.headers['x-file-name']), await readBody(request, MAX_WORD_BYTES)), 201);
+      if (pathname === '/api/v1/word-format/jobs' && request.method === 'GET') return success(response, service.wordFormat.list());
+      if (pathname === '/api/v1/word-format/jobs' && request.method === 'POST') return success(response, service.wordFormat.create(await readJsonBody(request)), 202);
+      const wordJob = pathname.match(/^\/api\/v1\/word-format\/jobs\/([^/]+)(?:\/(apply|cancel|events|output|report))?$/);
+      if (wordJob) {
+        const id = decodeURIComponent(wordJob[1]), action = wordJob[2];
+        const job = service.wordFormat.get(id);
+        if (!action && request.method === 'GET') return success(response, service.wordFormat.snapshot(job));
+        if (action === 'apply' && request.method === 'POST') return success(response, service.wordFormat.apply(id, await readJsonBody(request)), 202);
+        if (action === 'cancel' && request.method === 'POST') return success(response, service.wordFormat.cancel(id));
+        if (['output', 'report'].includes(action) && request.method === 'GET') {
+          const artifact = service.wordFormat.artifact(id, action);
+          response.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + encodeURIComponent(artifact.name));
+          return sendFile(request, response, artifact.file, action === 'output' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 'application/json; charset=utf-8');
+        }
+        if (action === 'events' && request.method === 'GET') {
+          response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-transform', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
+          response.flushHeaders();
+          const send = event => { if (!response.destroyed) response.write('data: ' + JSON.stringify(event) + '\n\n'); };
+          service.wordFormat.on(id, send);
+          const heartbeat = setInterval(() => { if (!response.destroyed) response.write(': heartbeat\n\n'); }, 15000); heartbeat.unref();
+          response.once('close', () => { service.wordFormat.off(id, send); clearInterval(heartbeat); });
+          send({ type: 'snapshot', job: service.wordFormat.snapshot(job) });
+          return;
+        }
+      }
+
       if (pathname === '/api/v1/chat/images' && request.method === 'POST') {
         const filename = decodeFileName(request.headers['x-file-name']) || '图片';
         return success(response, service.uploadChatImage(filename, await readBody(request, IMAGE_LIMITS.maxImageBytes)), 201);
@@ -271,14 +301,22 @@ function createHttpServer({ service = new KnowledgeBaseService() } = {}) {
         const body = await readJsonBody(request);
         response.writeHead(200, {
           'Content-Type': 'text/event-stream; charset=utf-8',
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-transform',
           Connection: 'keep-alive',
-          'Access-Control-Allow-Origin': '*'
+          'X-Accel-Buffering': 'no'
         });
-        const send = event => { try { response.write('data: ' + JSON.stringify(event) + '\n\n'); } catch { /* 客户端断开 */ } };
-        await service.askStream(body || {}, send);
-        response.write('event: end\ndata: {}\n\n');
-        return response.end();
+        response.flushHeaders();
+        const controller = new AbortController();
+        const cancel = () => controller.abort();
+        response.once('close', cancel);
+        const send = event => { if (!response.destroyed && !response.writableEnded) response.write('data: ' + JSON.stringify(event) + '\n\n'); };
+        const heartbeat = setInterval(() => { if (!response.destroyed) response.write(': heartbeat\n\n'); }, 15000);
+        heartbeat.unref();
+        try {
+          await service.askStream(body || {}, send, { signal: controller.signal });
+          if (!response.destroyed) { response.write('event: end\ndata: {}\n\n'); response.end(); }
+        } finally { clearInterval(heartbeat); response.off('close', cancel); }
+        return;
       }
 
       // 会话历史

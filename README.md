@@ -4,7 +4,7 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/Maskicruis/specflow-engineering-studio?label=Release)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-3276d2)](https://github.com/Maskicruis/specflow-engineering-studio/releases/latest)
-[![Tests](https://img.shields.io/badge/tests-85%20passed-38b27a)](#开发与验证)
+[![Tests](https://img.shields.io/badge/tests-105%20passed-38b27a)](#开发与验证)
 
 > 独立工程版使用单独的产品名、应用标识、数据目录和 Release，不会覆盖早期知识库项目。
 
@@ -17,6 +17,8 @@
 - **规范网站动态监测**：在文档数据库中登记规范发布页，按 6 小时、12 小时、每天或每周自动检查；保存页面基线、规范链接与变化记录，显示新增/移除项，并拒绝本机或局域网地址。
 - **道路排水坡度网络设计**：画布只表达拓扑，不把网格当作实际距离；每条坡段只连接两个相邻节点并显示一个方向箭头，动画不会跨越中间节点。支持连续插点、双击延伸、框选移动、逐段反向，以及一键把节点设为分水高点或汇水低点。计算完全使用用户填写的实际距离、方向、设计坡度、已知标高与规范上下限。
 - **可扩展工具库**：主工作台只负责按专业检索、分类和启动工具；内置工具在独立桌面窗口运行，重复打开会聚焦现有窗口，外部程序仍由安全工具注册表启动。`Ctrl+Alt+C` 调用多功能计算器，`Ctrl+Alt+R` 打开独立的坡度设计窗口。
+- **Word 格式标准化**：`Ctrl+Alt+W` 打开独立工具，提供四步向导、自动环境检查、明确的下一步提示与内置使用说明。默认「只统一格式」不调用模型；可选 LLM 流式结构审查，审核后再运行 V35.1 VBA。输出无宏 DOCX 副本和处理报告，文字建议另行确认并保留修订，不覆盖原文件。需要本机 Microsoft Word 与 VBA 项目访问许可，见 [使用说明](docs/WORD_FORMAT_CN.md)。
+- **实时流式问答**：模型增量通过 SSE 逐块转发，前端实时更新正文、思考过程和引用；支持停止生成、超时及断线提示，不把未完成回答保存为完整对话。
 - **DeepSeek 余额**：桌面标题栏读取当前用户 DeepSeek Harness 的凭据并查询官方余额接口；密钥不会返回界面、日志或写入仓库。
 - **Harness 一键审查 Skill**：安装连接组件后，直接输入 `/specflow-design-review <设计文件路径>`，自动完成规范分组选择、分主题检索、合规矩阵、引用和非破坏式修订建议，无需重复编写长提示词。
 - **外部 Harness 连接**：不再启动第二套 DSH 服务，也不再占用 Harness 端口；一键安装四个知识工具。Harness 回答中的“打开 SpecFlow 原文”链接会唤醒已经运行的 SpecFlow，并直接定位、高亮对应页。
@@ -41,6 +43,8 @@
 ![软件更新设置](docs/assets/software-update-v0.3.png)
 
 ![PDF 原文定位与高亮](docs/assets/source-review-v0.4.png)
+
+![Word 标准化四步向导](docs/assets/word-format-guide-v0.10.1.png)
 
 ## 下载与安装
 
@@ -124,4 +128,4 @@ npm run build:desktop
 
 道路流向动画采用独立实现，并参考了 MIT 许可项目 [tt-a1i/archify](https://github.com/tt-a1i/archify) 的方向感知 trace-motion 设计思路；启用系统“减少动态效果”后会自动停用动画。
 
-更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [更新机制](docs/UPDATES_CN.md) · [v0.9.5 发布说明](docs/RELEASE_NOTES_0.9.5_CN.md)
+更多文档：[安装说明](docs/INSTALL_CN.md) · [API 契约](docs/API.md) · [Word 标准化](docs/WORD_FORMAT_CN.md) · [更新机制](docs/UPDATES_CN.md) · [v0.10.1 更新说明](docs/RELEASE_NOTES_0.10.1_CN.md)

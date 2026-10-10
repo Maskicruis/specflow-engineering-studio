@@ -6,7 +6,7 @@
 
 ## 首次启动必须完成的配置
 
-SpecFlow v0.9.5 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
+SpecFlow v0.10.1 包含独立 Node.js 运行时，不要求系统预装 Node.js。它不再内置或启动 DeepSeek Harness，因而可以与 DeepSeek Harness Studio 同时运行。MinerU 仍是独立的 PDF 解析引擎；安装 SpecFlow 并不等于安装 MinerU。
 
 1. 安装并确认 MinerU 可在本机运行；
 2. 打开 SpecFlow 右上角“设置”；
@@ -25,6 +25,8 @@ SpecFlow v0.9.5 包含独立 Node.js 运行时，不要求系统预装 Node.js�
 “设置 → 模型接口”可以配置独立图像模型。使用 DeepSeek 官方接口时，含图片的消息默认使用 `deepseek-flash`；文字消息继续使用已配置的对话模型。智能问答会先识别图片内容再检索规范；通用对话直接分析图片。图片保留在最近对话中，便于后续追问。
 
 ## 工程目录与设计工具
+
+Word 标准化：在工具工作台打开「Word 格式标准化」（`Ctrl+Alt+W`）。需要 Microsoft Word；在信任中心允许「信任对 VBA 工程对象模型的访问」，无需启用所有宏。可直接运行随附 VBA，也可选择「LLM 结构审查 + VBA」，先审核模型建议再生成独立副本。详见 [Word 使用说明](WORD_FORMAT_CN.md)。
 
 1. 打开左侧“设计助手”，选择项目根目录并填写项目名称；程序会在 `<根目录>\<项目名称>` 下创建阶段目录；
 2. 默认目录可在“设置 → 项目与工具”逐行修改，之后新建项目自动使用新模板；已有项目可点击“同步目录模板”；
@@ -59,7 +61,7 @@ Skill 会自动检测 SpecFlow、选择相关规范分组、分主题检索、�
 Release 附带 `SHA256SUMS.txt`。PowerShell 可用以下命令核对：
 
 ```powershell
-Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.9.5-x64.exe -Algorithm SHA256
+Get-FileHash .\SpecFlow-Engineering-Studio-Setup-0.10.1-x64.exe -Algorithm SHA256
 ```
 
 输出应与 `SHA256SUMS.txt` 对应行一致。

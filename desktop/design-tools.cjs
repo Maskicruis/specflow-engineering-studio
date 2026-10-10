@@ -54,6 +54,8 @@ class DesignToolRegistry {
     return {
       items: [this.publicTool(this.tools[CALCULATOR_ID]), {
         id: 'road-slope', name: '道路排水坡度设计', description: '根据实际距离、坡向和控制标高计算逐节点排水网络', category: 'site', discipline: '总图与道路', icon: '↘', launchMode: 'window', route: '/tools/road-slope', hotkey: 'Ctrl+Alt+R', kind: 'built-in', available: true
+      }, {
+        id: 'word-format', name: 'Word 格式标准化', description: '随附 V35.1 VBA 统一格式，可选 LLM 结构审查并在确认后生成独立副本', category: 'document', discipline: '工程文档', icon: 'W', launchMode: 'window', route: '/tools/word-format', hotkey: 'Ctrl+Alt+W', kind: 'built-in', available: true
       }]
     };
   }

@@ -1,0 +1,2 @@
+# Preserve the supplied formatter byte-for-byte; it is validated by SHA-256.
+assets/word-format/*.bas -text -diff

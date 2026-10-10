@@ -83,6 +83,8 @@ ${details}
 
 ## 核心界面
 
+![Word 标准化四步向导](https://raw.githubusercontent.com/${repository}/${tag}/docs/assets/word-format-guide-v0.10.1.png)
+
 ![多轮工程助手与行内引用](https://raw.githubusercontent.com/${repository}/main/docs/assets/engineering-assistant-v0.4.png)
 
 ![文档数据库](https://raw.githubusercontent.com/${repository}/main/docs/assets/document-database-v0.3.png)
@@ -101,7 +103,13 @@ async function main() {
   const token = getToken();
   const user = await api('GET', `${apiRoot}/user`, token);
   console.log(`以 @${user.login} 发布 ${repository} ${tag}`);
-  if (!metadataOnly) writeChecksums();
+  if (!metadataOnly) {
+    const names = artifactNames();
+    for (const name of [names.setup, names.blockmap, names.portable]) {
+      if (!fs.existsSync(path.join(releaseDir, name))) throw new Error(`发布文件缺失：${name}，请先完成桌面构建。`);
+    }
+    writeChecksums();
+  }
   const metadata = { name: `SpecFlow Engineering Studio ${tag}`, body: releaseNotes(), draft: false, prerelease: false };
   let release;
   try {
@@ -109,8 +117,8 @@ async function main() {
     release = await api('PATCH', `${apiRoot}/repos/${repository}/releases/${release.id}`, token, { body: metadata });
     console.log(`已更新 ${tag} 的标题和功能介绍`);
   } catch {
-    release = await api('POST', `${apiRoot}/repos/${repository}/releases`, token, { body: { tag_name: tag, target_commitish: 'main', ...metadata } });
-    console.log(`已创建 ${tag}`);
+    release = await api('POST', `${apiRoot}/repos/${repository}/releases`, token, { body: { tag_name: tag, target_commitish: 'main', ...metadata, draft: !metadataOnly } });
+    console.log(`已创建 ${tag}${metadataOnly ? '' : ' 草稿；上传完成后公开'}`);
   }
   if (metadataOnly) return console.log(`发布页已更新：https://github.com/${repository}/releases/tag/${tag}`);
   const names = artifactNames();
@@ -118,7 +126,7 @@ async function main() {
   const existing = new Map((release.assets || []).map(asset => [asset.name, asset.id]));
   for (const name of files) {
     const filePath = path.join(releaseDir, name);
-    if (!fs.existsSync(filePath)) { console.warn(`跳过缺失资产：${name}`); continue; }
+    if (!fs.existsSync(filePath)) throw new Error(`发布文件缺失：${name}`);
     if (existing.has(name)) {
       await api('DELETE', `${apiRoot}/repos/${repository}/releases/assets/${existing.get(name)}`, token);
     }
@@ -126,6 +134,7 @@ async function main() {
     await api('POST', `${uploadsRoot}/repos/${repository}/releases/${release.id}/assets?name=${encodeURIComponent(name)}`, token, { binary });
     console.log(`已上传 ${name} (${(binary.length / 1048576).toFixed(1)} MB)`);
   }
+  await api('PATCH', `${apiRoot}/repos/${repository}/releases/${release.id}`, token, { body: metadata });
   console.log(`发布完成：https://github.com/${repository}/releases/tag/${tag}`);
 }
 

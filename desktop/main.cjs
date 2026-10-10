@@ -25,6 +25,9 @@ app.commandLine.appendSwitch('force-color-profile', 'srgb');
 if (process.env.SPECFLOW_CAPTURE_PATH) app.disableHardwareAcceleration();
 
 const BUILT_IN_TOOL_WINDOWS = Object.freeze({
+  'word-format': {
+    title: 'Word 格式标准化 · SpecFlow', route: '/tools/word-format', width: 1180, height: 820, minWidth: 860, minHeight: 620
+  },
   'road-slope': {
     title: '道路排水坡度设计 · SpecFlow',
     route: '/tools/road-slope',

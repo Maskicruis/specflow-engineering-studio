@@ -16,7 +16,37 @@
 | --- | --- | --- |
 | GET | `/api/v1/search?q=&topK=&doc=` | 查询规划 + 检索，返回 `queryPlan` 与带定位链接的命中 |
 | POST | `/api/v1/ask` | 问答：`{question, scenario, retrievalMode, conversationId?, history?, topK?, docIds?, groupId?}` |
-| POST | `/api/v1/ask/stream` | SSE 流式问答：事件 `citations` → `delta*` → `done` → `saved` |
+| POST | `/api/v1/ask/stream` | SSE 流式问答：`phase`、`citations`、可选 `reasoning`、`delta*` → `done` → `saved` |
+
+流式响应为 `text/event-stream`，每帧 `data` 是 `{type,...}` JSON。`delta.text` 是新增正文，`reasoning.text` 是独立思考增量；收到 `citations` 后使用与非流式问答相同的定位结构渲染引用。`done` 包含模式、模型、usage、可选长度限制 warning；`saved.conversationId` 表示完整回答已保存。`error` 带错误消息 / code，不应把此前增量当作完整答案。关闭连接会中止上游请求；支持中文 UTF-8 跨块、心跳和异常断线检测。响应禁用代理缓存 / 缓冲。非流式 `/ask` 接口保持兼容。
+
+## Word 格式标准化
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| GET | `/api/v1/word-format/status` | Word / VBA 项目访问 / 模型配置检测 |
+| POST | `/api/v1/word-format/files` | DOCX / DOC 原始二进制，URL 编码 `X-File-Name`，最多 50 MB |
+| GET / POST | `/api/v1/word-format/jobs` | 列表 / 创建任务 |
+| GET | `/api/v1/word-format/jobs/:id` | 状态、审查摘要和建议计划 |
+| GET | `/api/v1/word-format/jobs/:id/events` | SSE：`snapshot`、`progress`、模型 `delta` |
+| POST | `/api/v1/word-format/jobs/:id/apply` | 审核后应用建议并执行 VBA |
+| POST | `/api/v1/word-format/jobs/:id/cancel` | 取消处理 |
+| GET | `/api/v1/word-format/jobs/:id/output` | 完成后下载无宏 DOCX |
+| GET | `/api/v1/word-format/jobs/:id/report` | JSON 处理报告 |
+
+上传返回 `data.id=wf_...`，创建请求参见 `schemas/word-format-request.schema.json`：
+
+```json
+{"fileId":"wf_<uuid>","mode":"vba-llm","confirmVba":true,"confirmLlm":true,"instructions":"检查标题结构，不改工程数值"}
+```
+
+返回 `202` 和 `wj_...` 任务。`vba` 模式直接排版；`vba-llm` 模式提取文档后流式生成受限计划，进入 `awaiting-review`。应用请求示例：
+
+```json
+{"confirmApply":true,"confirmTextEdits":false,"changes":[{"index":2,"role":"heading1","applyText":false}]}
+```
+
+仅允许计划中的段落，role 为 `keep/body/heading1..4`。文字建议不默认采用；设置 `applyText=true` 时还必须有 `confirmTextEdits=true`。完成状态提供 `outputUrl/reportUrl`。不得传任意文件路径、宏名或模型生成代码。原文件不覆盖；文档内容不构成执行授权。
 
 检索前会返回 `queryPlan`：其中 `expandedTerms` 是补充的规范术语；`needsClarification=true` 时，调用方应先向用户询问 `clarification.questions`，再把原问题与回答合并后重新检索。例如“综合楼”会扩展为“民用建筑群、民用建筑、公共建筑”等术语，但在确定防火间距或火灾危险性分类前仍需用途、高度、生产储存内容和相邻建筑条件。
 

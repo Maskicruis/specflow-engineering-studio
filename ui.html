@@ -124,12 +124,13 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
         </div><div id="qState" class="muted qa-status" aria-live="polite"></div></div>
       </section>
       <section id="toolsSection" class="workspace-page tools-page" data-workspace-page="tools">
-        <header class="page-bar"><div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4v4M4 8h4M16 16v4M16 16h4M13 5l6 6-8 8-6-6 8-8Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="page-title-copy"><strong>工具工作台</strong><small>按专业组织的可扩展工具库，每项工具在独立窗口中运行</small></span></div><div class="page-actions"><span class="chip"><i class="chip-dot"></i>2 个可用工具</span></div></header>
+        <header class="page-bar"><div class="page-title"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M8 4v4M4 8h4M16 16v4M16 16h4M13 5l6 6-8 8-6-6 8-8Z" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="page-title-copy"><strong>工具工作台</strong><small>按专业组织的可扩展工具库，每项工具在独立窗口中运行</small></span></div><div class="page-actions"><span class="chip" id="toolCatalogCount">3 项工具</span></div></header>
         <div class="tools-body">
           <section class="tool-library-head"><div><span class="tool-eyebrow">ENGINEERING TOOL LIBRARY</span><h2>选择工具开始工作</h2><p>主工作台只负责检索、分类与启动。工具拥有独立画布和窗口状态，可同时打开并在不同专业之间切换。</p></div><label class="tool-search"><svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke-width="1.7"/><path d="m16 16 4 4" stroke-width="1.7" stroke-linecap="round"/></svg><input id="toolSearch" placeholder="搜索工具名称或专业…"></label></section>
-          <div class="tool-filter-row" aria-label="工具专业筛选"><button class="tool-filter active" data-studio-act="toolFilter" data-tool-filter="all">全部</button><button class="tool-filter" data-studio-act="toolFilter" data-tool-filter="general">通用计算</button><button class="tool-filter" data-studio-act="toolFilter" data-tool-filter="site">总图与道路</button><span class="tool-filter-future">建筑 · 结构 · 给排水 · 电气工具可继续接入</span></div>
-          <div class="tool-section-head"><div><h3>已安装工具</h3><p>打开后不会占用 SpecFlow 主页面</p></div><span id="toolResultCount">2 项</span></div>
+          <div class="tool-filter-row" aria-label="工具专业筛选"><button class="tool-filter active" data-studio-act="toolFilter" data-tool-filter="all">全部</button><button class="tool-filter" data-studio-act="toolFilter" data-tool-filter="general">通用计算</button><button class="tool-filter" data-studio-act="toolFilter" data-tool-filter="site">总图与道路</button><button class="tool-filter" data-studio-act="toolFilter" data-tool-filter="document">工程文档</button><span class="tool-filter-future">建筑 · 结构 · 给排水 · 电气工具可继续接入</span></div>
+          <div class="tool-section-head"><div><h3>已安装工具</h3><p>打开后不会占用 SpecFlow 主页面</p></div><span id="toolResultCount">3 项</span></div>
           <div id="toolCards" class="tool-cards">
+            <article class="tool-card" data-tool-card data-tool-category="document" data-tool-name="Word 格式标准化 工程文档 VBA LLM"><div class="tool-card-top"><div class="tool-icon">W</div><div class="tool-copy"><div class="tool-title-row"><strong>Word 格式标准化</strong><span class="tool-window-badge">独立窗口</span></div><p>随附 V35.1 VBA 统一排版，可选 LLM 结构审查，审核后生成独立 DOCX 副本。</p></div></div><div class="tool-card-foot"><div class="tool-meta"><span>工程文档</span><kbd>Ctrl + Alt + W</kbd></div><div class="tool-card-actions"><span class="engine-badge">内置</span><button class="btn btn-primary" data-tool-launch="word-format">打开独立窗口</button></div></div></article>
             <article class="tool-card" data-tool-card data-tool-category="general" data-tool-name="多功能计算器 通用计算"><div class="tool-card-top"><div class="tool-icon">∑</div><div class="tool-copy"><div class="tool-title-row"><strong>多功能计算器</strong><span class="tool-window-badge">外部程序</span></div><p>调用已配置的本地工程计算程序，适合常用公式与数值计算。</p></div></div><div class="tool-card-foot"><div class="tool-meta"><span>通用计算</span><kbd>Ctrl + Alt + C</kbd></div><div class="tool-card-actions"><span id="calculatorBadge" class="engine-badge">检测中</span><button class="btn btn-primary desktop-only" data-tool-launch="calculator">启动工具</button></div></div></article>
             <article class="tool-card" data-tool-card data-tool-category="site" data-tool-name="道路排水坡度设计 总图 道路 排水 竖向"><div class="tool-card-top"><div class="tool-icon">↘</div><div class="tool-copy"><div class="tool-title-row"><strong>道路排水坡度设计</strong><span class="tool-window-badge">独立窗口</span></div><p>绘制逐节点排水网络，根据实际距离、坡向和控制标高计算设计标高。</p></div></div><div class="tool-card-foot"><div class="tool-meta"><span>总图与道路</span><kbd>Ctrl + Alt + R</kbd></div><div class="tool-card-actions"><span id="roadSlopeBadge" class="engine-badge">内置</span><button class="btn btn-primary" data-tool-launch="road-slope">打开独立窗口</button></div></div></article>
           </div>
@@ -214,8 +215,9 @@ input,select{min-height:34px;background:var(--surface-2);border:1px solid var(--
 </div>
 <div id="chatImageViewer" class="chat-image-viewer" hidden><button class="chat-image-backdrop" data-close-chat-image aria-label="关闭图片预览" tabindex="-1"></button><section class="chat-image-dialog" role="dialog" aria-modal="true" aria-labelledby="chatImageTitle"><header class="chat-image-head"><strong id="chatImageTitle">图片预览</strong><button id="closeChatImage" class="btn" data-close-chat-image>关闭预览</button></header><div class="chat-image-content"><img id="chatImageFull" alt="图片预览"></div></section></div>
 <script src="/app/chat-images.js"></script>
+<script src="/app/stream-client.js"></script>
 <script>
-var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], QA_BUSY=false, SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
+var DOCS=[], GROUPS=[], CONVERSATIONS=[], ACTIVE_GROUP='all', CURRENT_CONVERSATION_ID='', GROUP_EDITOR=null, GROUP_MESSAGE='', ACTIVE_SETTINGS_TAB='parser', CUR=null, CURITEMS=[], CHAT_HISTORY=[], QA_BUSY=false, QA_CONTROLLER=null, SETTINGS_LOADED=false, UPDATE_STATUS=null, CONNECTOR_STATUS=null, DESKTOP=window.specflowDesktop||null;
 try{ document.documentElement.setAttribute('data-theme',localStorage.getItem('kb-theme')||'dark'); }catch(e){ document.documentElement.setAttribute('data-theme','dark'); }
 function api(p,o){ return fetch('/api/'+p,o).then(async function(r){ var body=await r.json().catch(function(){return {};}); if(!r.ok) throw new Error((body.error&&body.error.message)||body.msg||r.status); return body; }); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -521,9 +523,9 @@ function appendUserTurn(text,images){
 function appendAssistantTurn(){
   var box=document.getElementById('chatMessages');
   var turn=document.createElement('div'); turn.className='chat-turn assistant';
-  turn.innerHTML='<div class="chat-avatar">✦</div><div class="chat-assistant-body"><div class="chat-mode-note">正在思考…</div><div class="qa-answer">正在生成回答…</div><div class="qa-cites"></div></div>';
+  turn.innerHTML='<div class="chat-avatar">✦</div><div class="chat-assistant-body"><div class="chat-mode-note">正在思考…</div><details class="chat-reasoning" hidden><summary>模型思考过程</summary><pre></pre></details><div class="qa-answer">正在生成回答…</div><div class="qa-cites"></div></div>';
   box.appendChild(turn); scrollConversation();
-  return { root:turn, note:turn.querySelector('.chat-mode-note'), answer:turn.querySelector('.qa-answer'), cites:turn.querySelector('.qa-cites') };
+  return { root:turn, note:turn.querySelector('.chat-mode-note'), answer:turn.querySelector('.qa-answer'), cites:turn.querySelector('.qa-cites'), reasoning:turn.querySelector('.chat-reasoning'), reasoningText:turn.querySelector('.chat-reasoning pre') };
 }
 function conversationTime(value){
   var date=new Date(value||0); if(!Number.isFinite(date.getTime())) return '';
@@ -578,24 +580,39 @@ async function askQuestion(){
   var retrievalMode=document.getElementById('qMode').value||'auto';
   var scope=document.getElementById('qScope').value||'';
   var images=SpecFlowChatImages.take();
-  QA_BUSY=true; SpecFlowChatImages.setBusy(true); document.getElementById('sendQuestionButton').disabled=true; document.getElementById('q').readOnly=true;
+  QA_BUSY=true; QA_CONTROLLER=new AbortController(); SpecFlowChatImages.setBusy(true); document.getElementById('q').readOnly=true;
+  var sendButton=document.getElementById('sendQuestionButton'),sendIcon=sendButton.innerHTML;
+  sendButton.setAttribute('data-act','stopAnswer'); sendButton.setAttribute('aria-label','停止生成'); sendButton.title='停止生成'; sendButton.innerHTML='<svg viewBox="0 0 24 24" fill="none"><rect x="6" y="6" width="12" height="12" rx="2" stroke-width="1.8"/></svg>';
   var userTurn=appendUserTurn(q,images); document.getElementById('q').value=''; document.getElementById('q').style.height='';
   var turn=appendAssistantTurn();
   document.getElementById('qState').textContent=images.length?(retrievalMode==='general'?'正在分析图片…':'正在识别图片、检索并生成…'):(retrievalMode==='general'?'模型生成中…':'检索并生成中…');
   var empty=document.getElementById('assistantEmpty'); if(empty) empty.style.display='none';
+  var text='',citations=[],reasoning='',result=null,saved=false,renderPending=false,streamActive=true;
+  function renderStream(){renderPending=false;turn.answer.innerHTML=answerHtml(text,citations);scrollConversation();}
+  function scheduleRender(){if(!renderPending){renderPending=true;requestAnimationFrame(function(){if(streamActive)renderStream();});}}
   try{
     var payload={question:q,images:images.map(function(image){return image.id;}),scenario:scenario,retrievalMode:retrievalMode,conversationId:CURRENT_CONVERSATION_ID||undefined}; if(retrievalMode!=='general') Object.assign(payload,scopePayload(scope));
-    var r=await fetch('/api/v1/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    var body=await r.json(); var d=body.data||body;
-    if(!r.ok||body.ok===false||d.ok===false) throw new Error(typeof d.error==='string'?d.error:((body.error&&body.error.message)||'模型请求失败'));
+    var r=await fetch('/api/v1/ask/stream',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:QA_CONTROLLER.signal});
+    if(!r.ok){var body=await r.json().catch(function(){return {};});throw new Error(body.error&&body.error.message||'流式请求失败 HTTP '+r.status);}
+    await SpecFlowStream.json(r,function(event){
+      if(event.type==='error') throw new Error(event.error||'模型生成失败');
+      if(event.type==='phase'){turn.note.textContent=event.message||'处理中…';document.getElementById('qState').textContent=turn.note.textContent;}
+      if(event.type==='citations'){citations=event.citations||[];turn.cites.innerHTML=citations.map(citationCard).join('');scheduleRender();}
+      if(event.type==='reasoning'){reasoning+=event.text||'';turn.reasoning.hidden=false;turn.reasoningText.textContent=reasoning;}
+      if(event.type==='delta'){text+=event.text||'';turn.note.textContent='正在接收回答…';scheduleRender();}
+      if(event.type==='done'){result=event;text=event.answer||event.note||text;citations=event.citations||citations;renderStream();}
+      if(event.type==='saved'){CURRENT_CONVERSATION_ID=event.conversationId;saved=true;}
+    });
+    if(!result||!saved) throw new Error('连接中断，完整回答或会话保存确认未收到。');
+    var d=result; d.citations=citations;
     var n=(d.citations||[]).length;
     var label=d.mode==='clarification'?'需要补充信息':d.grounding==='general'?'通用模型回答':(d.mode==='retrieval'?'资料检索结果':'资料库增强回答');
     document.getElementById('qState').textContent=label+(n?' · 引用 '+n+' 条':'');
-    var text=d.answer||d.note||d.error||'';
     turn.note.textContent=label+(d.model?' · '+d.model:''); turn.answer.innerHTML=answerHtml(text,d.citations||[]); turn.cites.innerHTML=(d.citations||[]).map(citationCard).join('');
-    CHAT_HISTORY.push({role:'user',content:q,images:images}); if(d.conversationId) CURRENT_CONVERSATION_ID=d.conversationId; if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
-  }catch(e){ userTurn.remove(); turn.note.textContent='请求失败'; turn.answer.textContent='失败：'+e.message+'。问题和图片已恢复到输入框，可重试。'; document.getElementById('qState').textContent='失败：'+e.message; document.getElementById('q').value=originalQuestion; SpecFlowChatImages.restore(images); }
-  finally{ QA_BUSY=false; SpecFlowChatImages.setBusy(false); document.getElementById('sendQuestionButton').disabled=false; document.getElementById('q').readOnly=false; document.getElementById('q').focus(); }
+    if(d.warning){turn.note.textContent+=' · '+d.warning;document.getElementById('qState').textContent=d.warning;}
+    CHAT_HISTORY.push({role:'user',content:q,images:images}); if(text) CHAT_HISTORY.push({role:'assistant',content:text}); scrollConversation(); loadConversations();
+  }catch(e){ var stopped=QA_CONTROLLER&&QA_CONTROLLER.signal.aborted;turn.note.textContent=(stopped?'已停止生成':'接收失败')+' · 未保存本轮记录';if(text){renderStream();}else{userTurn.remove();turn.answer.textContent=stopped?'已停止。问题和图片已恢复，可重新发送。':'失败：'+e.message+'。问题和图片已恢复，可重试。';}document.getElementById('qState').textContent=stopped?'已停止生成':'失败：'+e.message;document.getElementById('q').value=originalQuestion;SpecFlowChatImages.restore(images); }
+  finally{ streamActive=false;QA_BUSY=false;QA_CONTROLLER=null;SpecFlowChatImages.setBusy(false);sendButton.setAttribute('data-act','ask');sendButton.setAttribute('aria-label','发送问题');sendButton.title='Enter 发送 · Shift + Enter 换行';sendButton.innerHTML=sendIcon;document.getElementById('q').readOnly=false;document.getElementById('q').focus(); }
 }
 function toggleTheme(){
   var next=document.documentElement.getAttribute('data-theme')==='light'?'dark':'light';
@@ -736,6 +753,7 @@ document.addEventListener('click',function(e){
   else if(act==='check'){ checkParser(); }
   else if(act==='read'){ readDoc(t.getAttribute('data-id')); }
   else if(act==='ask'){ askQuestion(); }
+  else if(act==='stopAnswer'){ if(QA_CONTROLLER) QA_CONTROLLER.abort(); }
   else if(act==='theme'){ toggleTheme(); }
   else if(act==='saveLlm'){ saveLlm(); }
   else if(act==='clearLlmKey'){ clearLlmKey(); }
